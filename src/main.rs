@@ -70,9 +70,6 @@ enum Commands {
         /// Output directory (default: ./videos)
         #[arg(long, default_value = "./videos")]
         output_dir: String,
-
-        #[command(flatten)]
-        login: LoginOpts,
     },
     /// View and manage download history
     History {
@@ -115,8 +112,8 @@ async fn main() -> Result<()> {
         Commands::Login { login } => cmd_login(login).await?,
         Commands::QrLogin => cmd_qr_login().await?,
         Commands::List { course_id, login } => cmd_list(course_id, login).await?,
-        Commands::Download { course_id, lecture, only_recordings, output_dir, login } => {
-            cmd_download(course_id, lecture, only_recordings, output_dir, login).await?;
+        Commands::Download { course_id, lecture, only_recordings, output_dir } => {
+            cmd_download(course_id, lecture, only_recordings, output_dir).await?;
         }
         Commands::History { re_download, clear } => cmd_history(re_download, clear).await?,
         Commands::Export { path, course_id, login } => cmd_export(path, course_id, login).await?,
@@ -185,10 +182,8 @@ async fn cmd_download(
     lecture: Option<String>,
     only_recordings: bool,
     output_dir: String,
-    login: LoginOpts,
 ) -> Result<()> {
     let mut app = app::App::new().await?;
-    maybe_login(&app, &login).await?;
 
     // Fetch course by required course-id
     app.set_course_id(course_id);
