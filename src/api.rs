@@ -12,6 +12,23 @@ use url::Url;
 use crate::types::{Course, VideoInfo};
 use crate::vdebug;
 
+/// Classify whether a v2 flow failure looks like an expired/invalid auth session
+/// and is worth retrying after re-login.
+///
+/// Note: this helper does NOT perform login or retries. It only inspects the
+/// existing error message patterns emitted by the v2 API flow.
+pub fn is_retryable_v2_auth_error(err: &anyhow::Error) -> bool {
+    let s = err.to_string();
+    [
+        "未找到视频平台登录表单",
+        "Cookie 已失效",
+        "未找到 LTI 鉴权表单",
+        "登录状态失效",
+    ]
+    .iter()
+    .any(|pat| s.contains(pat))
+}
+
 // ============================================================
 // Helper: JSON value navigation
 // ============================================================

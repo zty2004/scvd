@@ -146,7 +146,7 @@ async fn cmd_download(
 
     // Fetch course by required course-id
     app.set_course_id(course_id);
-    app.refresh_courses_v2().await?;
+    app.refresh_courses_v2_with_auth_retry().await?;
 
     let output_path = PathBuf::from(&output_dir);
 

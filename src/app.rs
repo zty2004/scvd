@@ -44,6 +44,28 @@ impl App {
         })
     }
 
+    fn load_saved_credentials() -> Result<(String, String)> {
+        let cfg = config::load_config()?;
+        match (cfg.username, cfg.password) {
+            (Some(u), Some(p)) => Ok((u, p)),
+            _ => Err(anyhow::anyhow!(
+                "Session expired, but no saved credentials found in config.json. \
+Please run the login command first (and save username/password) so download can auto re-login."
+            )),
+        }
+    }
+
+    async fn relogin_from_saved_credentials(&mut self) -> Result<()> {
+        let (username, password) = Self::load_saved_credentials()?;
+
+        // Reuse existing interactive login flow (captcha may be required).
+        self.login_pwd(&username, &password, None).await?;
+
+        // Re-create client so subsequent requests use refreshed cookie state.
+        self.client = crate::client::create_client()?;
+        Ok(())
+    }
+
     /// Login with username/password + captcha.
     pub async fn login_pwd(
         &self,
@@ -142,6 +164,41 @@ impl App {
         self.courses = api::get_real_canvas_videos_v2(&self.client, &course_id).await?;
         println!("Found {} courses.", self.courses.len());
         Ok(())
+    }
+
+    /// Fetch courses using the v2 API, with a single automatic re-login retry
+    /// when the failure looks like an expired auth session.
+    pub async fn refresh_courses_v2_with_auth_retry(&mut self) -> Result<()> {
+        let course_id = self
+            .course_id
+            .as_ref()
+            .ok_or_else(|| {
+                anyhow::anyhow!("No course ID set. Use --course-id or set it via config.")
+            })?
+            .clone();
+
+        println!("Fetching course {} via v2 API...", course_id);
+
+        match api::get_real_canvas_videos_v2(&self.client, &course_id).await {
+            Ok(courses) => {
+                self.courses = courses;
+                println!("Found {} courses.", self.courses.len());
+                Ok(())
+            }
+            Err(e) => {
+                if !api::is_retryable_v2_auth_error(&e) {
+                    return Err(e);
+                }
+
+                println!("Session expired. Attempting automatic re-login...");
+                self.relogin_from_saved_credentials().await?;
+
+                println!("Re-login successful. Retrying v2 fetch...");
+                self.courses = api::get_real_canvas_videos_v2(&self.client, &course_id).await?;
+                println!("Found {} courses.", self.courses.len());
+                Ok(())
+            }
+        }
     }
 
     /// Print the course list.
