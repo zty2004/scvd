@@ -9,6 +9,23 @@ use crate::qr_login;
 use crate::api;
 use crate::download;
 
+fn print_captcha_in_terminal(img: &image::DynamicImage) -> Result<()> {
+    // Add some vertical spacing so we don't overwrite recent terminal output.
+    println!("\n\n--- CAPTCHA ---\n");
+
+    // Use a fixed placement to avoid cursor repositioning artifacts.
+    // Using absolute positioning can force output to the top-left depending on terminal.
+    let mut cfg = viuer::Config::default();
+    cfg.absolute_offset = false;
+    cfg.x = 0;
+    cfg.y = 0;
+
+    viuer::print(img, &cfg).context("Failed to print captcha image to terminal")?;
+
+    println!("\n---------------\n");
+    Ok(())
+}
+
 /// Application state.
 pub struct App {
     pub client: reqwest::Client,
@@ -45,7 +62,7 @@ impl App {
         } else {
             // Try terminal display, fallback to file
             if let Ok(img) = image::load_from_memory(&captcha_bytes) {
-                if viuer::print(&img, &viuer::Config::default()).is_ok() {
+                if print_captcha_in_terminal(&img).is_ok() {
                     dialoguer::Input::new()
                         .with_prompt("Captcha text")
                         .interact_text()
