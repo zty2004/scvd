@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use reqwest::cookie::Jar;
 
 use crate::config;
+use crate::vdebug;
 
 /// A serializable cookie entry
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -27,7 +28,7 @@ pub fn create_client() -> Result<reqwest::Client> {
             }
         }
         if !cookies.is_empty() {
-            eprintln!("Loaded {} saved cookies.", cookies.len());
+            vdebug!("Loaded {} saved cookies.", cookies.len());
         }
     }
 

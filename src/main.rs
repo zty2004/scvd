@@ -10,8 +10,11 @@ mod client;
 mod config;
 mod download;
 mod history;
+mod logging;
 mod login;
 mod types;
+
+use crate::logging::set_verbose;
 
 #[derive(Debug, Clone, Deserialize)]
 struct LoginFile {
@@ -45,6 +48,10 @@ struct LoginOpts {
     about = "SJTU Canvas Video Downloader (Rust CLI)"
 )]
 struct Cli {
+    /// Print verbose diagnostic traces (debug output)
+    #[arg(short, long, global = true, action = clap::ArgAction::SetTrue)]
+    verbose: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -87,6 +94,8 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    set_verbose(cli.verbose);
 
     match cli.command {
         Commands::Login { login } => cmd_login(login).await?,

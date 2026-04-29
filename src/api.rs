@@ -10,18 +10,7 @@ use std::sync::Arc;
 use url::Url;
 
 use crate::types::{Course, VideoInfo};
-
-fn is_verbose() -> bool {
-    std::env::args().any(|a| a == "--verbose" || a == "-v")
-}
-
-macro_rules! debug_stdout {
-    ($($arg:tt)*) => {{
-        if is_verbose() {
-            println!($($arg)*);
-        }
-    }};
-}
+use crate::vdebug;
 
 // ============================================================
 // Helper: JSON value navigation
@@ -499,16 +488,16 @@ pub async fn get_external_tool_id(client: &reqwest::Client, course_id: &str) -> 
     let default = "8329".to_string();
     let url = format!("https://oc.sjtu.edu.cn/courses/{}", course_id);
 
-    debug_stdout!("[DEBUG] get_external_tool_id: GET {}", url);
+    vdebug!("[DEBUG] get_external_tool_id: GET {}", url);
     let resp = match client.get(&url).send().await {
         Ok(r) => r,
         Err(e) => {
-            debug_stdout!("[DEBUG] Failed to fetch course page: {}", e);
+            vdebug!("[DEBUG] Failed to fetch course page: {}", e);
             return default;
         }
     };
 
-    debug_stdout!("[DEBUG] get_external_tool_id: final URL = {}", resp.url());
+    vdebug!("[DEBUG] get_external_tool_id: final URL = {}", resp.url());
 
     let body = match resp.text().await {
         Ok(b) => b,
@@ -554,20 +543,20 @@ pub async fn get_sub_cookies_v2(
     course_id: &str,
 ) -> Result<(String, HashMap<String, String>)> {
     let external_tool_id = get_external_tool_id(client, course_id).await;
-    eprintln!("[DEBUG] external_tool_id = {}", external_tool_id);
+    vdebug!("[DEBUG] external_tool_id = {}", external_tool_id);
 
     // Step 1: GET external tool URL to get the launch form
     let ext_url = format!(
         "https://oc.sjtu.edu.cn/courses/{}/external_tools/{}",
         course_id, external_tool_id
     );
-    eprintln!("[DEBUG] Step 1: GET {}", ext_url);
+    vdebug!("[DEBUG] Step 1: GET {}", ext_url);
     let resp = client
         .get(&ext_url)
         .send()
         .await
         .context("Failed to visit external tool")?;
-    eprintln!("[DEBUG] Step 1: final URL = {}", resp.url());
+    vdebug!("[DEBUG] Step 1: final URL = {}", resp.url());
     let body = resp
         .text()
         .await
@@ -598,26 +587,26 @@ pub async fn get_sub_cookies_v2(
     }
 
     if launch_action.is_empty() {
-        eprintln!("[DEBUG] Step 2: No OIDC form found. Page forms:");
+        vdebug!("[DEBUG] Step 2: No OIDC form found. Page forms:");
         for form in document.select(&form_sel) {
             if let Some(action) = form.value().attr("action") {
-                eprintln!("  form action = {}", action);
+                vdebug!("  form action = {}", action);
             }
         }
         // Dump first 500 chars of the page for debugging
-        eprintln!("[DEBUG] Page preview: {}...", &body[..body.len().min(500)]);
+        vdebug!("[DEBUG] Page preview: {}...", &body[..body.len().min(500)]);
         return Err(anyhow::anyhow!(
             "未找到视频平台登录表单，可能是 Cookie 已失效，或课程页面结构已变化。"
         ));
     }
-    eprintln!(
+    vdebug!(
         "[DEBUG] Step 2: launch_action = {}, fields = {}",
         launch_action,
         launch_data.len()
     );
 
     // Step 3: POST to OIDC login initiation (with cookies, allow redirects)
-    eprintln!("[DEBUG] Step 3: POST to {}", launch_action);
+    vdebug!("[DEBUG] Step 3: POST to {}", launch_action);
     let resp2 = client
         .post(&launch_action)
         .form(&launch_data)
@@ -625,7 +614,7 @@ pub async fn get_sub_cookies_v2(
         .await
         .context("Failed to POST OIDC login initiation")?;
 
-    eprintln!(
+    vdebug!(
         "[DEBUG] Step 3: final URL = {}, status = {}",
         resp2.url(),
         resp2.status()
@@ -654,13 +643,13 @@ pub async fn get_sub_cookies_v2(
     }
 
     if auth_action.is_empty() {
-        eprintln!("[DEBUG] Step 4: No LTI3 auth form found. Page forms:");
+        vdebug!("[DEBUG] Step 4: No LTI3 auth form found. Page forms:");
         for form in document2.select(&form_sel) {
             if let Some(action) = form.value().attr("action") {
-                eprintln!("  form action = {}", action);
+                vdebug!("  form action = {}", action);
             }
         }
-        eprintln!(
+        vdebug!(
             "[DEBUG] Page preview: {}...",
             &body2[..body2.len().min(500)]
         );
@@ -668,7 +657,7 @@ pub async fn get_sub_cookies_v2(
             "未找到 LTI 鉴权表单，可能是登录状态失效，或学校视频平台返回流程已变化。"
         ));
     }
-    eprintln!(
+    vdebug!(
         "[DEBUG] Step 4: auth_action = {}, fields = {}",
         auth_action,
         auth_data.len()
@@ -705,7 +694,7 @@ pub async fn get_sub_cookies_v2(
     // Since we can't extract cookies from the jar, let's try just using the
     // main client. If it follows the redirect, we can check the final URL
     // which should contain the tokenId.
-    eprintln!(
+    vdebug!(
         "[DEBUG] Step 5: POST to {} (will follow redirects)",
         auth_action
     );
@@ -717,19 +706,19 @@ pub async fn get_sub_cookies_v2(
         .context("Failed to POST LTI3 auth")?;
 
     let final_url3 = resp3.url().to_string();
-    eprintln!("[DEBUG] Step 5: final URL = {}", final_url3);
-    eprintln!("[DEBUG] Step 5: status = {}", resp3.status());
+    vdebug!("[DEBUG] Step 5: final URL = {}", final_url3);
+    vdebug!("[DEBUG] Step 5: status = {}", resp3.status());
 
     // Parse params from the final URL (which may contain tokenId after redirect)
     let params_dict = parse_redirect_params(&final_url3);
-    eprintln!("[DEBUG] Step 5: params_dict = {:?}", params_dict);
+    vdebug!("[DEBUG] Step 5: params_dict = {:?}", params_dict);
 
     // If we didn't get tokenId from the final URL, try reading the Location header
     // from a no-redirect request
     let token_id = if let Some(tid) = params_dict.get("tokenId").cloned() {
         tid
     } else {
-        eprintln!("[DEBUG] Step 5: tokenId not in final URL, trying no-redirect approach...");
+        vdebug!("[DEBUG] Step 5: tokenId not in final URL, trying no-redirect approach...");
         // Fallback: use no-redirect client, but we need to pass cookies manually
         // We can't get them from the jar, so this may fail.
         // As a last resort, try the no-redirect client without cookies:
@@ -746,10 +735,10 @@ pub async fn get_sub_cookies_v2(
             .map(|h| h.to_str().unwrap_or(""))
             .unwrap_or("")
             .to_string();
-        eprintln!("[DEBUG] Step 5b: Location = {}", loc);
+        vdebug!("[DEBUG] Step 5b: Location = {}", loc);
 
         let params2 = parse_redirect_params(&loc);
-        eprintln!("[DEBUG] Step 5b: params = {:?}", params2);
+        vdebug!("[DEBUG] Step 5b: params = {:?}", params2);
         params2.get("tokenId").cloned().ok_or_else(|| {
             anyhow::anyhow!(
                 "未能从视频平台跳转中解析 tokenId，final_url={}, params={:?}",
@@ -776,18 +765,18 @@ pub async fn get_sub_cookies_v2(
             ),
         ],
     );
-    eprintln!(
+    vdebug!(
         "[DEBUG] canvas_course_id from redirect = {:?}",
         canvas_course_id
     );
 
     // Step 6: Exchange tokenId for access token
-    eprintln!(
+    vdebug!(
         "[DEBUG] Step 6: Exchanging token for tokenId = {}",
         token_id
     );
     let token_payload = exchange_token(client, &token_id).await?;
-    eprintln!("[DEBUG] Step 6: token_payload = {:?}", token_payload);
+    vdebug!("[DEBUG] Step 6: token_payload = {:?}", token_payload);
 
     let access_token = token_payload
         .get("token")
@@ -812,7 +801,7 @@ pub async fn get_sub_cookies_v2(
         .or(canvas_course_id)
         .unwrap_or_default();
 
-    eprintln!(
+    vdebug!(
         "[DEBUG] final_course_id = {}, access_token length = {}",
         final_course_id,
         access_token.len()
@@ -854,7 +843,7 @@ pub async fn get_real_canvas_video_single_v2(
     form.insert("id", video_id);
     form.insert("isAudit", "true");
 
-    eprintln!(
+    vdebug!(
         "[DEBUG] get_real_canvas_video_single_v2: videoId = {}",
         video_id
     );
@@ -876,13 +865,13 @@ pub async fn get_real_canvas_video_single_v2(
         .await
         .context("Failed to fetch video detail")?;
 
-    eprintln!(
+    vdebug!(
         "[DEBUG] get_real_canvas_video_single_v2: status = {}",
         resp.status()
     );
     let json: serde_json::Value = resp.json().await.context("Failed to parse video detail")?;
 
-    eprintln!(
+    vdebug!(
         "[DEBUG] get_real_canvas_video_single_v2: response keys = {:?}",
         json.as_object().map(|o| o.keys().collect::<Vec<_>>())
     );
@@ -904,7 +893,7 @@ async fn request_video_list(
     canvas_course_id: Option<&str>,
 ) -> Result<Vec<serde_json::Value>> {
     let candidates = iter_course_id_candidates(course_id, canvas_course_id);
-    eprintln!(
+    vdebug!(
         "[DEBUG] request_video_list: candidate IDs = {:?}",
         candidates
     );
@@ -938,7 +927,7 @@ async fn request_video_list(
 
         if let Ok(r) = resp {
             if let Ok(json) = r.json::<serde_json::Value>().await {
-                eprintln!(
+                vdebug!(
                     "[DEBUG] request_video_list body={:?} -> code={:?}, data_type={:?}",
                     body,
                     json.get("code"),
@@ -954,7 +943,7 @@ async fn request_video_list(
                 );
                 last_payload = json.clone();
                 if let Some(records) = extract_records(&json) {
-                    eprintln!(
+                    vdebug!(
                         "[DEBUG] request_video_list: found {} records",
                         records.len()
                     );
@@ -998,7 +987,7 @@ pub async fn get_real_canvas_videos_v2(
 
     let records = request_video_list(client, &v_header, course_id, Some(&canvas_course_id)).await?;
 
-    eprintln!(
+    vdebug!(
         "[DEBUG] get_real_canvas_videos_v2: got {} records",
         records.len()
     );
@@ -1022,7 +1011,7 @@ pub async fn get_real_canvas_videos_v2(
             .unwrap_or_default();
 
         if video_id.is_empty() {
-            eprintln!("[DEBUG] Skipping record with no videoId");
+            vdebug!("[DEBUG] Skipping record with no videoId");
             continue;
         }
 
@@ -1030,9 +1019,10 @@ pub async fn get_real_canvas_videos_v2(
         let detail = match get_real_canvas_video_single_v2(client, &video_id, &v_header).await {
             Ok(d) => d,
             Err(e) => {
-                eprintln!(
+                vdebug!(
                     "[DEBUG] Failed to get detail for videoId={}: {}",
-                    video_id, e
+                    video_id,
+                    e
                 );
                 continue;
             }
@@ -1066,7 +1056,7 @@ pub async fn get_real_canvas_videos_v2(
                 .filter_map(|v| parse_v2_video_detail(v))
                 .collect::<Vec<_>>()
         } else {
-            eprintln!(
+            vdebug!(
                 "[DEBUG] Detail for videoId={} has no videoPlayResponseVoList, keys: {:?}",
                 video_id,
                 detail.as_object().map(|o| o.keys().collect::<Vec<_>>())
@@ -1085,7 +1075,7 @@ pub async fn get_real_canvas_videos_v2(
         }
     }
 
-    eprintln!(
+    vdebug!(
         "[DEBUG] Built {} courses from {} records",
         courses.len(),
         records.len()

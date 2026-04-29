@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-04-29
+
+### Fixed
+- Fix regression where debug/trace output could appear even without `-v/--verbose`.
+- Make `-v/--verbose` a real global CLI flag and gate diagnostic traces across the app.
+
 ## [0.1.0] - 2026-04-29
 
 ### Added

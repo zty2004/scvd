@@ -52,7 +52,7 @@ cargo run --release -- --help
 
 ### Verbose / 调试输出
 
-当你需要排查网络流程（例如 v2 OIDC/LTI3 流程）时，可以开启 verbose 模式输出调试信息到 stdout：
+当你需要排查网络流程（例如 v2 OIDC/LTI3 流程）时，可以开启 verbose 模式输出调试信息到 stderr：
 
 ```bash
 ./target/release/sjtu-canvas-video-download -v <subcommand> ...
