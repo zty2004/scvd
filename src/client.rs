@@ -85,20 +85,17 @@ fn load_cookies_from_file() -> Result<Vec<CookieEntry>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
-    let content = std::fs::read_to_string(&path)
-        .context("Failed to read cookies")?;
-    let cookies: Vec<CookieEntry> = serde_json::from_str(&content)
-        .context("Failed to parse cookies")?;
+    let content = std::fs::read_to_string(&path).context("Failed to read cookies")?;
+    let cookies: Vec<CookieEntry> =
+        serde_json::from_str(&content).context("Failed to parse cookies")?;
     Ok(cookies)
 }
 
 fn save_cookies_to_file(cookies: &[CookieEntry]) -> Result<()> {
     config::ensure_config_dir()?;
     let path = config::config_dir().join("cookies.json");
-    let content = serde_json::to_string_pretty(cookies)
-        .context("Failed to serialize cookies")?;
-    std::fs::write(&path, content)
-        .context("Failed to write cookies")?;
+    let content = serde_json::to_string_pretty(cookies).context("Failed to serialize cookies")?;
+    std::fs::write(&path, content).context("Failed to write cookies")?;
     Ok(())
 }
 

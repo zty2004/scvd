@@ -1,8 +1,8 @@
 use std::sync::Mutex;
 
-use anyhow::{Context, Result};
-use crate::types::HistoryEntry;
 use crate::config::history_path;
+use crate::types::HistoryEntry;
+use anyhow::{Context, Result};
 
 static HISTORY: Mutex<Vec<HistoryEntry>> = Mutex::new(Vec::new());
 static LOADED: Mutex<bool> = Mutex::new(false);
@@ -23,10 +23,9 @@ fn load_history_from_file() -> Result<Vec<HistoryEntry>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
-    let content = std::fs::read_to_string(&path)
-        .context("Failed to read history.json")?;
-    let entries: Vec<HistoryEntry> = serde_json::from_str(&content)
-        .context("Failed to parse history.json")?;
+    let content = std::fs::read_to_string(&path).context("Failed to read history.json")?;
+    let entries: Vec<HistoryEntry> =
+        serde_json::from_str(&content).context("Failed to parse history.json")?;
     Ok(entries)
 }
 
@@ -49,10 +48,8 @@ pub fn _save_history() -> Result<()> {
 fn save_to_file() -> Result<()> {
     let path = history_path();
     let entries = HISTORY.lock().unwrap();
-    let content = serde_json::to_string_pretty(&*entries)
-        .context("Failed to serialize history")?;
-    std::fs::write(&path, content)
-        .context("Failed to write history.json")?;
+    let content = serde_json::to_string_pretty(&*entries).context("Failed to serialize history")?;
+    std::fs::write(&path, content).context("Failed to write history.json")?;
     Ok(())
 }
 
