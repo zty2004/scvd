@@ -50,6 +50,18 @@ cargo run --release -- --help
 ./target/release/sjtu-canvas-video-download --help
 ```
 
+### Verbose / 调试输出
+
+当你需要排查网络流程（例如 v2 OIDC/LTI3 流程）时，可以开启 verbose 模式输出调试信息到 stdout：
+
+```bash
+./target/release/sjtu-canvas-video-download -v <subcommand> ...
+# 或
+./target/release/sjtu-canvas-video-download --verbose <subcommand> ...
+```
+
+未开启 verbose 时，不会输出调试信息（但会保留必要的进度提示）。
+
 ### 典型工作流（示例）
 
 1. 先登录（如需验证码，按提示操作）
