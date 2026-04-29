@@ -514,6 +514,241 @@ fn parse_video_from_json(val: &serde_json::Value) -> Option<VideoInfo> {
 // Course ID mode: v.sjtu.edu.cn OIDC/LTI3 flow (v2)
 // ============================================================
 
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+struct V2LaunchArtifacts {
+    external_tool_id: String,
+    launch_action: String,
+    launch_data: HashMap<String, String>,
+    auth_action: String,
+    auth_data: HashMap<String, String>,
+    final_url: String,
+    params_dict: HashMap<String, String>,
+    token_id: String,
+    canvas_course_id: Option<String>,
+}
+
+/// Run the shared v2 OIDC/LTI3 launch chain up to tokenId extraction.
+///
+/// This is intentionally shared by both:
+/// - the real v2 fetch (`get_sub_cookies_v2`), and
+/// - the best-effort prewarm in download flow.
+async fn run_v2_launch_chain(client: &reqwest::Client, course_id: &str) -> Result<V2LaunchArtifacts> {
+    let external_tool_id = get_external_tool_id(client, course_id).await;
+    vdebug!("[DEBUG] external_tool_id = {}", external_tool_id);
+
+    // Step 1: GET external tool URL to get the launch form
+    let ext_url = format!(
+        "https://oc.sjtu.edu.cn/courses/{}/external_tools/{}",
+        course_id, external_tool_id
+    );
+    vdebug!("[DEBUG] Step 1: GET {}", ext_url);
+    let resp = client
+        .get(&ext_url)
+        .send()
+        .await
+        .context("Failed to visit external tool")?;
+    vdebug!("[DEBUG] Step 1: final URL = {}", resp.url());
+    let body = resp
+        .text()
+        .await
+        .context("Failed to read external tool page")?;
+
+    // Step 2: Extract OIDC login initiation form
+    let document = Html::parse_document(&body);
+    let form_sel = Selector::parse("form").unwrap();
+    let input_sel = Selector::parse("input").unwrap();
+
+    let mut launch_action = String::new();
+    let mut launch_data: HashMap<String, String> = HashMap::new();
+
+    for form in document.select(&form_sel) {
+        if let Some(action) = form.value().attr("action") {
+            if action.contains("oidc/login_initiations") {
+                launch_action = action.to_string();
+                for input in form.select(&input_sel) {
+                    if let (Some(name), Some(value)) =
+                        (input.value().attr("name"), input.value().attr("value"))
+                    {
+                        launch_data.insert(name.to_string(), value.to_string());
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    if launch_action.is_empty() {
+        vdebug!("[DEBUG] Step 2: No OIDC form found. Page forms:");
+        for form in document.select(&form_sel) {
+            if let Some(action) = form.value().attr("action") {
+                vdebug!("  form action = {}", action);
+            }
+        }
+        vdebug!("[DEBUG] Page preview: {}...", &body[..body.len().min(500)]);
+        return Err(anyhow::anyhow!(
+            "未找到视频平台登录表单，可能是 Cookie 已失效，或课程页面结构已变化。"
+        ));
+    }
+    vdebug!(
+        "[DEBUG] Step 2: launch_action = {}, fields = {}",
+        launch_action,
+        launch_data.len()
+    );
+
+    // Step 3: POST to OIDC login initiation
+    vdebug!("[DEBUG] Step 3: POST to {}", launch_action);
+    let resp2 = client
+        .post(&launch_action)
+        .form(&launch_data)
+        .send()
+        .await
+        .context("Failed to POST OIDC login initiation")?;
+
+    vdebug!(
+        "[DEBUG] Step 3: final URL = {}, status = {}",
+        resp2.url(),
+        resp2.status()
+    );
+    let body2 = resp2.text().await.context("Failed to read OIDC response")?;
+
+    // Step 4: Extract LTI3 auth form
+    let document2 = Html::parse_document(&body2);
+    let mut auth_action = String::new();
+    let mut auth_data: HashMap<String, String> = HashMap::new();
+
+    for form in document2.select(&form_sel) {
+        if let Some(action) = form.value().attr("action") {
+            if action.contains("lti3/lti3Auth/ivs") {
+                auth_action = action.to_string();
+                for input in form.select(&input_sel) {
+                    if let (Some(name), Some(value)) =
+                        (input.value().attr("name"), input.value().attr("value"))
+                    {
+                        auth_data.insert(name.to_string(), value.to_string());
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    if auth_action.is_empty() {
+        vdebug!("[DEBUG] Step 4: No LTI3 auth form found. Page forms:");
+        for form in document2.select(&form_sel) {
+            if let Some(action) = form.value().attr("action") {
+                vdebug!("  form action = {}", action);
+            }
+        }
+        vdebug!("[DEBUG] Page preview: {}...", &body2[..body2.len().min(500)]);
+        return Err(anyhow::anyhow!(
+            "未找到 LTI 鉴权表单，可能是登录状态失效，或学校视频平台返回流程已变化。"
+        ));
+    }
+    vdebug!(
+        "[DEBUG] Step 4: auth_action = {}, fields = {}",
+        auth_action,
+        auth_data.len()
+    );
+
+    // Step 5: POST to LTI3 auth (follow redirects). We only need the resulting URL/params.
+    vdebug!(
+        "[DEBUG] Step 5: POST to {} (will follow redirects)",
+        auth_action
+    );
+    let resp3 = client
+        .post(&auth_action)
+        .form(&auth_data)
+        .send()
+        .await
+        .context("Failed to POST LTI3 auth")?;
+
+    let final_url3 = resp3.url().to_string();
+    vdebug!("[DEBUG] Step 5: final URL = {}", final_url3);
+    vdebug!("[DEBUG] Step 5: status = {}", resp3.status());
+
+    let params_dict = parse_redirect_params(&final_url3);
+    vdebug!("[DEBUG] Step 5: params_dict = {:?}", params_dict);
+
+    // Fallback: try reading Location header with a no-redirect client.
+    let token_id = if let Some(tid) = params_dict.get("tokenId").cloned() {
+        tid
+    } else {
+        vdebug!("[DEBUG] Step 5: tokenId not in final URL, trying no-redirect approach...");
+        let no_redirect_client = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .cookie_provider(Arc::new(Jar::default()))
+            .build()?;
+
+        let resp3b = no_redirect_client
+            .post(&auth_action)
+            .form(&auth_data)
+            .send()
+            .await
+            .context("Failed to POST LTI3 auth (no-redirect)")?;
+
+        let loc = resp3b
+            .headers()
+            .get("location")
+            .map(|h| h.to_str().unwrap_or(""))
+            .unwrap_or("")
+            .to_string();
+        vdebug!("[DEBUG] Step 5b: Location = {}", loc);
+
+        let params2 = parse_redirect_params(&loc);
+        vdebug!("[DEBUG] Step 5b: params = {:?}", params2);
+        params2.get("tokenId").cloned().ok_or_else(|| {
+            anyhow::anyhow!(
+                "未能从视频平台跳转中解析 tokenId，final_url={}, params={:?}",
+                final_url3,
+                params_dict
+            )
+        })?
+    };
+
+    let canvas_course_id = get_canvas_course_id(
+        &params_dict,
+        &[
+            serde_json::Value::Object(
+                launch_data
+                    .iter()
+                    .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                    .collect(),
+            ),
+            serde_json::Value::Object(
+                auth_data
+                    .iter()
+                    .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                    .collect(),
+            ),
+        ],
+    );
+    vdebug!(
+        "[DEBUG] canvas_course_id from redirect = {:?}",
+        canvas_course_id
+    );
+
+    Ok(V2LaunchArtifacts {
+        external_tool_id,
+        launch_action,
+        launch_data,
+        auth_action,
+        auth_data,
+        final_url: final_url3,
+        params_dict,
+        token_id,
+        canvas_course_id,
+    })
+}
+
+/// Best-effort: prewarm the v2 OIDC/LTI3 launch chain to populate in-memory cookies/session.
+///
+/// This does NOT exchange tokenId for API token and does NOT fetch any video list.
+pub async fn prewarm_v2_launch_chain(client: &reqwest::Client, course_id: &str) -> Result<()> {
+    let _ = run_v2_launch_chain(client, course_id).await?;
+    Ok(())
+}
+
 /// Scrape the external tool ID from oc.sjtu.edu.cn course page.
 pub async fn get_external_tool_id(client: &reqwest::Client, course_id: &str) -> String {
     let default = "8329".to_string();
@@ -573,240 +808,14 @@ pub async fn get_sub_cookies_v2(
     client: &reqwest::Client,
     course_id: &str,
 ) -> Result<(String, HashMap<String, String>)> {
-    let external_tool_id = get_external_tool_id(client, course_id).await;
-    vdebug!("[DEBUG] external_tool_id = {}", external_tool_id);
-
-    // Step 1: GET external tool URL to get the launch form
-    let ext_url = format!(
-        "https://oc.sjtu.edu.cn/courses/{}/external_tools/{}",
-        course_id, external_tool_id
-    );
-    vdebug!("[DEBUG] Step 1: GET {}", ext_url);
-    let resp = client
-        .get(&ext_url)
-        .send()
-        .await
-        .context("Failed to visit external tool")?;
-    vdebug!("[DEBUG] Step 1: final URL = {}", resp.url());
-    let body = resp
-        .text()
-        .await
-        .context("Failed to read external tool page")?;
-
-    // Step 2: Extract OIDC login initiation form
-    let document = Html::parse_document(&body);
-    let form_sel = Selector::parse("form").unwrap();
-    let input_sel = Selector::parse("input").unwrap();
-
-    let mut launch_action = String::new();
-    let mut launch_data: HashMap<String, String> = HashMap::new();
-
-    for form in document.select(&form_sel) {
-        if let Some(action) = form.value().attr("action") {
-            if action.contains("oidc/login_initiations") {
-                launch_action = action.to_string();
-                for input in form.select(&input_sel) {
-                    if let (Some(name), Some(value)) =
-                        (input.value().attr("name"), input.value().attr("value"))
-                    {
-                        launch_data.insert(name.to_string(), value.to_string());
-                    }
-                }
-                break;
-            }
-        }
-    }
-
-    if launch_action.is_empty() {
-        vdebug!("[DEBUG] Step 2: No OIDC form found. Page forms:");
-        for form in document.select(&form_sel) {
-            if let Some(action) = form.value().attr("action") {
-                vdebug!("  form action = {}", action);
-            }
-        }
-        // Dump first 500 chars of the page for debugging
-        vdebug!("[DEBUG] Page preview: {}...", &body[..body.len().min(500)]);
-        return Err(anyhow::anyhow!(
-            "未找到视频平台登录表单，可能是 Cookie 已失效，或课程页面结构已变化。"
-        ));
-    }
-    vdebug!(
-        "[DEBUG] Step 2: launch_action = {}, fields = {}",
-        launch_action,
-        launch_data.len()
-    );
-
-    // Step 3: POST to OIDC login initiation (with cookies, allow redirects)
-    vdebug!("[DEBUG] Step 3: POST to {}", launch_action);
-    let resp2 = client
-        .post(&launch_action)
-        .form(&launch_data)
-        .send()
-        .await
-        .context("Failed to POST OIDC login initiation")?;
-
-    vdebug!(
-        "[DEBUG] Step 3: final URL = {}, status = {}",
-        resp2.url(),
-        resp2.status()
-    );
-    let body2 = resp2.text().await.context("Failed to read OIDC response")?;
-
-    // Step 4: Extract LTI3 auth form
-    let document2 = Html::parse_document(&body2);
-    let mut auth_action = String::new();
-    let mut auth_data: HashMap<String, String> = HashMap::new();
-
-    for form in document2.select(&form_sel) {
-        if let Some(action) = form.value().attr("action") {
-            if action.contains("lti3/lti3Auth/ivs") {
-                auth_action = action.to_string();
-                for input in form.select(&input_sel) {
-                    if let (Some(name), Some(value)) =
-                        (input.value().attr("name"), input.value().attr("value"))
-                    {
-                        auth_data.insert(name.to_string(), value.to_string());
-                    }
-                }
-                break;
-            }
-        }
-    }
-
-    if auth_action.is_empty() {
-        vdebug!("[DEBUG] Step 4: No LTI3 auth form found. Page forms:");
-        for form in document2.select(&form_sel) {
-            if let Some(action) = form.value().attr("action") {
-                vdebug!("  form action = {}", action);
-            }
-        }
-        vdebug!(
-            "[DEBUG] Page preview: {}...",
-            &body2[..body2.len().min(500)]
-        );
-        return Err(anyhow::anyhow!(
-            "未找到 LTI 鉴权表单，可能是登录状态失效，或学校视频平台返回流程已变化。"
-        ));
-    }
-    vdebug!(
-        "[DEBUG] Step 4: auth_action = {}, fields = {}",
-        auth_action,
-        auth_data.len()
-    );
-
-    // Step 5: POST to LTI3 auth (no redirect following, but WITH cookies)
-    // Build a new client that shares the same cookie jar but doesn't follow redirects
-    let _cookie_jar = Arc::new(Jar::default());
-    // We can't extract the jar from the existing client, so instead we'll
-    // use the existing client and manually handle the redirect.
-    // The trick: reqwest with Policy::none() on a cloned client builder.
-    // But we need cookies. The simplest approach: just POST and check if
-    // the response is a redirect, then read the Location header.
-    // Actually, reqwest doesn't let us switch redirect policy per-request.
-    // Workaround: build a separate no-redirect client, but manually copy
-    // cookies from the main client by reading the Cookie header it would send.
-
-    // Get cookies for v.sjtu.edu.cn from the main client
-    let _v_url = "https://v.sjtu.edu.cn".parse::<url::Url>().unwrap();
-
-    let no_redirect_client = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .cookie_provider(Arc::new(Jar::default()))
-        .build()?;
-
-    // We need to extract cookies from the main client's jar for v.sjtu.edu.cn
-    // Unfortunately we can't. Let's try a different approach: just use the
-    // main client and parse the final URL after redirect.
-    // Python uses allow_redirects=False but Python's requests also sends cookies.
-    // Let's POST with the main client (which has cookies) but catch the redirect.
-    // Actually, reqwest doesn't support per-request redirect policy.
-    // The only option is a separate client. But we need to manually pass cookies.
-
-    // Since we can't extract cookies from the jar, let's try just using the
-    // main client. If it follows the redirect, we can check the final URL
-    // which should contain the tokenId.
-    vdebug!(
-        "[DEBUG] Step 5: POST to {} (will follow redirects)",
-        auth_action
-    );
-    let resp3 = client
-        .post(&auth_action)
-        .form(&auth_data)
-        .send()
-        .await
-        .context("Failed to POST LTI3 auth")?;
-
-    let final_url3 = resp3.url().to_string();
-    vdebug!("[DEBUG] Step 5: final URL = {}", final_url3);
-    vdebug!("[DEBUG] Step 5: status = {}", resp3.status());
-
-    // Parse params from the final URL (which may contain tokenId after redirect)
-    let params_dict = parse_redirect_params(&final_url3);
-    vdebug!("[DEBUG] Step 5: params_dict = {:?}", params_dict);
-
-    // If we didn't get tokenId from the final URL, try reading the Location header
-    // from a no-redirect request
-    let token_id = if let Some(tid) = params_dict.get("tokenId").cloned() {
-        tid
-    } else {
-        vdebug!("[DEBUG] Step 5: tokenId not in final URL, trying no-redirect approach...");
-        // Fallback: use no-redirect client, but we need to pass cookies manually
-        // We can't get them from the jar, so this may fail.
-        // As a last resort, try the no-redirect client without cookies:
-        let resp3b = no_redirect_client
-            .post(&auth_action)
-            .form(&auth_data)
-            .send()
-            .await
-            .context("Failed to POST LTI3 auth (no-redirect)")?;
-
-        let loc = resp3b
-            .headers()
-            .get("location")
-            .map(|h| h.to_str().unwrap_or(""))
-            .unwrap_or("")
-            .to_string();
-        vdebug!("[DEBUG] Step 5b: Location = {}", loc);
-
-        let params2 = parse_redirect_params(&loc);
-        vdebug!("[DEBUG] Step 5b: params = {:?}", params2);
-        params2.get("tokenId").cloned().ok_or_else(|| {
-            anyhow::anyhow!(
-                "未能从视频平台跳转中解析 tokenId，final_url={}, params={:?}",
-                final_url3,
-                params_dict
-            )
-        })?
-    };
-
-    let canvas_course_id = get_canvas_course_id(
-        &params_dict,
-        &[
-            serde_json::Value::Object(
-                launch_data
-                    .iter()
-                    .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
-                    .collect(),
-            ),
-            serde_json::Value::Object(
-                auth_data
-                    .iter()
-                    .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
-                    .collect(),
-            ),
-        ],
-    );
-    vdebug!(
-        "[DEBUG] canvas_course_id from redirect = {:?}",
-        canvas_course_id
-    );
+    let artifacts = run_v2_launch_chain(client, course_id).await?;
 
     // Step 6: Exchange tokenId for access token
     vdebug!(
         "[DEBUG] Step 6: Exchanging token for tokenId = {}",
-        token_id
+        artifacts.token_id
     );
-    let token_payload = exchange_token(client, &token_id).await?;
+    let token_payload = exchange_token(client, &artifacts.token_id).await?;
     vdebug!("[DEBUG] Step 6: token_payload = {:?}", token_payload);
 
     let access_token = token_payload
@@ -829,7 +838,7 @@ pub async fn get_sub_cookies_v2(
         .or_else(|| access_params.get("ltiCourseId"))
         .and_then(|v| v.as_str())
         .map(String::from)
-        .or(canvas_course_id)
+        .or(artifacts.canvas_course_id)
         .unwrap_or_default();
 
     vdebug!(

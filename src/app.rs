@@ -45,21 +45,12 @@ impl App {
         })
     }
 
-    async fn prewarm_oc_cookies(&self) {
-        // Best-effort: try to let oc.sjtu.edu.cn set session/csrf cookies, then persist
-        // any Set-Cookie headers to cookies.json.
-        let url = "https://oc.sjtu.edu.cn/";
-        match self.client.get(url).send().await {
-            Ok(resp) => {
-                if let Err(e) = crate::client::capture_and_save_cookies(&resp, "oc.sjtu.edu.cn") {
-                    vdebug!("[DEBUG] prewarm oc cookies: failed to save cookies: {}", e);
-                } else {
-                    vdebug!("[DEBUG] prewarm oc cookies: done");
-                }
-            }
-            Err(e) => {
-                vdebug!("[DEBUG] prewarm oc cookies: request failed: {}", e);
-            }
+    async fn prewarm_v2_chain(&self, course_id: &str) {
+        // Best-effort: mimic the v0.0.1 / real v2 OIDC+LTI3 launch chain
+        // to populate in-memory cookie jar/session state.
+        match api::prewarm_v2_launch_chain(&self.client, course_id).await {
+            Ok(()) => vdebug!("[DEBUG] prewarm v2 launch chain: done"),
+            Err(e) => vdebug!("[DEBUG] prewarm v2 launch chain: failed: {}", e),
         }
     }
 
@@ -196,9 +187,9 @@ Please run the login command first (and save username/password) so download can 
             })?
             .clone();
 
-        // Best-effort cookie prewarm for oc.sjtu.edu.cn, to improve the chance of
+        // Best-effort cookie prewarm for v2 OIDC/LTI chain, to improve the chance of
         // finding the OIDC/LTI forms in the following v2 flow.
-        self.prewarm_oc_cookies().await;
+        self.prewarm_v2_chain(&course_id).await;
 
         println!("Fetching course {} via v2 API...", course_id);
 
@@ -215,6 +206,10 @@ Please run the login command first (and save username/password) so download can 
 
                 println!("Session expired. Attempting automatic re-login...");
                 self.relogin_from_saved_credentials().await?;
+
+                // Best-effort: after re-login we have a new client/cookie jar,
+                // so run the same v2 chain prewarm once before retry.
+                self.prewarm_v2_chain(&course_id).await;
 
                 println!("Re-login successful. Retrying v2 fetch...");
                 self.courses = api::get_real_canvas_videos_v2(&self.client, &course_id).await?;
