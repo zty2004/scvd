@@ -196,7 +196,7 @@ impl App {
     }
 
     /// Download selected courses.
-    pub async fn download(
+    pub async fn _download(
         &self,
         course_indices: &[usize],
         only_recordings: bool,
@@ -224,7 +224,7 @@ impl App {
     }
 
     /// Download a specific range of videos from a course.
-    pub async fn download_range(
+    pub async fn _download_range(
         &self,
         course_index: usize,
         start: usize,
