@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 
 use crate::config;
-use crate::types::{Course, SavedConfig, DownloadTask};
+use crate::types::{Course, DownloadTask, VideoInfo};
 use crate::login;
 use crate::qr_login;
 use crate::api;
@@ -12,7 +12,6 @@ use crate::download;
 /// Application state.
 pub struct App {
     pub client: reqwest::Client,
-    pub saved_config: SavedConfig,
     pub course_id: Option<String>,
     pub courses: Vec<Course>,
 }
@@ -25,7 +24,6 @@ impl App {
         Ok(Self {
             client,
             course_id: saved_config.course_id.clone(),
-            saved_config,
             courses: Vec::new(),
         })
     }
@@ -198,7 +196,7 @@ impl App {
     }
 
     /// Download selected courses.
-    pub async fn download(
+    pub async fn _download(
         &self,
         course_indices: &[usize],
         only_recordings: bool,
@@ -226,7 +224,7 @@ impl App {
     }
 
     /// Download a specific range of videos from a course.
-    pub async fn download_range(
+    pub async fn _download_range(
         &self,
         course_index: usize,
         start: usize,
@@ -282,6 +280,113 @@ impl App {
         println!();
 
         download::download_courses(&tasks, output_dir, false, &self.client).await
+    }
+
+    /// Download lectures (v2 API) by 1-based lecture index range.
+    ///
+    /// Note: the v2 fetch may return multiple Course entries for one course-id.
+    /// We flatten all videos across those entries, then sort by view_num.
+    pub async fn download_lecture_range(
+        &self,
+        start: usize,
+        end: usize,
+        only_recordings: bool,
+        output_dir: &PathBuf,
+    ) -> Result<()> {
+        if start == 0 || end == 0 {
+            return Err(anyhow::anyhow!("Lecture numbers must be >= 1"));
+        }
+        if start > end {
+            return Err(anyhow::anyhow!("Invalid lecture range: start ({}) > end ({})", start, end));
+        }
+
+        if self.courses.is_empty() {
+            return Err(anyhow::anyhow!("No course data loaded"));
+        }
+
+        let (subject_name, teacher, course_name) = {
+            let first = &self.courses[0];
+            (first.subject_name.clone(), first.teacher.clone(), first.name.clone())
+        };
+
+        let mut all_videos: Vec<VideoInfo> = self
+            .courses
+            .iter()
+            .flat_map(|c| c.videos.clone())
+            .collect();
+
+        if all_videos.is_empty() {
+            return Err(anyhow::anyhow!("No videos found for this course"));
+        }
+
+        all_videos.sort_by_key(|v| v.view_num);
+
+        let total = all_videos.len();
+        if start > total || end > total {
+            return Err(anyhow::anyhow!(
+                "Lecture range {}-{} out of range (total: {} lectures)",
+                start,
+                end,
+                total
+            ));
+        }
+
+        let start_idx = start - 1; // 1-based
+        let end_idx_excl = end; // 1-based, inclusive -> exclusive
+
+        let mut tasks: Vec<DownloadTask> = Vec::new();
+        let mut global_idx = start; // keep numbering aligned with lecture index
+
+        for (local_idx, video) in all_videos.iter().enumerate() {
+            if local_idx < start_idx || local_idx >= end_idx_excl {
+                continue;
+            }
+            if only_recordings && !video.is_recording {
+                continue;
+            }
+
+            let ext = if video.file_ext.is_empty() { "mp4" } else { &video.file_ext };
+            tasks.push(DownloadTask {
+                url: video.url.clone(),
+                filename: format!(
+                    "{}_{}_{}_{:03}.{}",
+                    download::sanitize_filename(&subject_name),
+                    download::sanitize_filename(&teacher),
+                    download::sanitize_filename(&course_name),
+                    global_idx,
+                    ext,
+                ),
+            });
+            global_idx += 1;
+        }
+
+        if tasks.is_empty() {
+            if only_recordings {
+                return Err(anyhow::anyhow!(
+                    "No videos left after applying --only-recordings to the selected lectures"
+                ));
+            }
+            return Err(anyhow::anyhow!("No videos in the selected lecture range"));
+        }
+
+        println!("\nDownload preview:");
+        println!("{}", download::preview_tasks(&tasks));
+        println!();
+
+        download::download_courses(&tasks, output_dir, false, &self.client).await
+    }
+
+    /// Download all lectures (v2 API).
+    pub async fn download_all_lectures(
+        &self,
+        only_recordings: bool,
+        output_dir: &PathBuf,
+    ) -> Result<()> {
+        let total = self.courses.iter().map(|c| c.videos.len()).sum::<usize>();
+        if total == 0 {
+            return Err(anyhow::anyhow!("No videos found for this course"));
+        }
+        self.download_lecture_range(1, total, only_recordings, output_dir).await
     }
 
     /// Export course data to JSON.

@@ -41,7 +41,7 @@ pub fn add_history(entry: HistoryEntry) {
     let _ = save_to_file();
 }
 
-pub fn save_history() -> Result<()> {
+pub fn _save_history() -> Result<()> {
     ensure_loaded();
     save_to_file()
 }

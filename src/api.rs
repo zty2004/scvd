@@ -211,7 +211,7 @@ pub async fn get_oauth_consumer_key(client: &reqwest::Client) -> Result<Option<S
     Ok(None)
 }
 
-fn random_uuid(len: usize) -> String {
+fn _random_uuid(len: usize) -> String {
     let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     let mut rng = rand::thread_rng();
     (0..len)
@@ -609,7 +609,7 @@ pub async fn get_sub_cookies_v2(
 
     // Step 5: POST to LTI3 auth (no redirect following, but WITH cookies)
     // Build a new client that shares the same cookie jar but doesn't follow redirects
-    let cookie_jar = Arc::new(Jar::default());
+    let _cookie_jar = Arc::new(Jar::default());
     // We can't extract the jar from the existing client, so instead we'll
     // use the existing client and manually handle the redirect.
     // The trick: reqwest with Policy::none() on a cloned client builder.
@@ -980,7 +980,7 @@ fn parse_v2_video_detail(val: &serde_json::Value) -> Option<VideoInfo> {
     })
 }
 
-fn parse_v2_video_from_record(val: &serde_json::Value) -> Option<VideoInfo> {
+fn _parse_v2_video_from_record(val: &serde_json::Value) -> Option<VideoInfo> {
     // Field names from the actual v2 API response:
     // videoId, videoName, userName, classroomName, courId, courseBeginTime, courseEndTime, ...
     let name = val.get("videoName")
