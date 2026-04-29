@@ -211,7 +211,7 @@ pub async fn get_oauth_consumer_key(client: &reqwest::Client) -> Result<Option<S
     Ok(None)
 }
 
-fn random_uuid(len: usize) -> String {
+fn _random_uuid(len: usize) -> String {
     let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     let mut rng = rand::thread_rng();
     (0..len)
