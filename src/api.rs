@@ -609,7 +609,7 @@ pub async fn get_sub_cookies_v2(
 
     // Step 5: POST to LTI3 auth (no redirect following, but WITH cookies)
     // Build a new client that shares the same cookie jar but doesn't follow redirects
-    let cookie_jar = Arc::new(Jar::default());
+    let _cookie_jar = Arc::new(Jar::default());
     // We can't extract the jar from the existing client, so instead we'll
     // use the existing client and manually handle the redirect.
     // The trick: reqwest with Policy::none() on a cloned client builder.
