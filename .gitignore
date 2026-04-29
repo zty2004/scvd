@@ -1,0 +1,40 @@
+# ----------------------------
+# Rust / Cargo
+# ----------------------------
+# Build output
+/target/
+
+# Rustfmt backup files
+**/*.rs.bk
+
+# Local Cargo config (usually machine-specific)
+.cargo/config.toml
+
+# ----------------------------
+# IDE / Editor
+# ----------------------------
+# VS Code
+.vscode/
+
+# JetBrains IDEs (IntelliJ, RustRover, CLion)
+.idea/
+*.iml
+
+# rust-analyzer cache (may appear in some environments)
+**/.rust-analyzer/
+
+# ----------------------------
+# OS / Misc
+# ----------------------------
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# ----------------------------
+# Logs
+# ----------------------------
+*.log
