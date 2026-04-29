@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 
 use crate::config;
-use crate::types::{Course, SavedConfig, DownloadTask, VideoInfo};
+use crate::types::{Course, DownloadTask, VideoInfo};
 use crate::login;
 use crate::qr_login;
 use crate::api;
@@ -12,7 +12,6 @@ use crate::download;
 /// Application state.
 pub struct App {
     pub client: reqwest::Client,
-    pub saved_config: SavedConfig,
     pub course_id: Option<String>,
     pub courses: Vec<Course>,
 }
@@ -25,7 +24,6 @@ impl App {
         Ok(Self {
             client,
             course_id: saved_config.course_id.clone(),
-            saved_config,
             courses: Vec::new(),
         })
     }
