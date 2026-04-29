@@ -131,29 +131,6 @@ pub async fn login(
     Ok(!failed)
 }
 
-/// Replay a GET request with existing cookies to re-establish session.
-pub async fn login_using_cookies(
-    client: &reqwest::Client,
-    url: &str,
-) -> Result<()> {
-    let resp = client
-        .get(url)
-        .header("accept-language", "zh-CN")
-        .send()
-        .await
-        .context("Failed to restore session")?;
-
-    // Capture cookies from OC session establishment
-    if let Some(domain) = resp.url().host_str() {
-        client::capture_and_save_cookies(&resp, domain).ok();
-    }
-
-    Ok(())
-}
-
 /// Visit the Canvas login URL to get initial cookies for the jAccount flow.
 pub const CANVAS_LOGIN_URL: &str =
     "https://courses.sjtu.edu.cn/app/oauth/2.0/login?login_type=outer";
-
-/// Visit the OpenCourse login URL to establish OC session after jAccount login.
-pub const OC_LOGIN_URL: &str = "https://oc.sjtu.edu.cn/login/openid_connect";

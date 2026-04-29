@@ -11,7 +11,6 @@ mod config;
 mod download;
 mod history;
 mod login;
-mod qr_login;
 mod types;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -54,8 +53,6 @@ enum Commands {
         #[command(flatten)]
         login: LoginOpts,
     },
-    /// Interactive jAccount QR code login
-    QrLogin,
     /// List all enrolled courses and videos
     List {
         /// Use a specific Canvas course ID (v2 API)
@@ -91,28 +88,6 @@ enum Commands {
         #[arg(long)]
         clear: bool,
     },
-    /// Export course URLs to JSON
-    Export {
-        /// Output file path
-        path: String,
-        /// Use a specific Canvas course ID (v2 API)
-        #[arg(long)]
-        course_id: Option<String>,
-
-        #[command(flatten)]
-        login: LoginOpts,
-    },
-    /// Import course URLs from JSON and download
-    Import {
-        /// Input file path
-        path: String,
-        /// Only download main recordings
-        #[arg(long)]
-        only_recordings: bool,
-        /// Output directory
-        #[arg(long, default_value = "./videos")]
-        output_dir: String,
-    },
 }
 
 #[tokio::main]
@@ -121,16 +96,11 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Login { login } => cmd_login(login).await?,
-        Commands::QrLogin => cmd_qr_login().await?,
         Commands::List { course_id, login } => cmd_list(course_id, login).await?,
         Commands::Download { course_id, lecture, only_recordings, output_dir } => {
             cmd_download(course_id, lecture, only_recordings, output_dir).await?;
         }
         Commands::History { re_download, clear } => cmd_history(re_download, clear).await?,
-        Commands::Export { path, course_id, login } => cmd_export(path, course_id, login).await?,
-        Commands::Import { path, only_recordings, output_dir } => {
-            cmd_import(path, only_recordings, output_dir).await?;
-        }
     }
 
     Ok(())
@@ -165,12 +135,6 @@ async fn cmd_login(login: LoginOpts) -> Result<()> {
     });
 
     app.login_pwd(&username, &password, None).await?;
-    Ok(())
-}
-
-async fn cmd_qr_login() -> Result<()> {
-    let app = app::App::new().await?;
-    app.login_qr().await?;
     Ok(())
 }
 
@@ -327,34 +291,3 @@ async fn cmd_history(re_download: Option<usize>, clear: bool) -> Result<()> {
     Ok(())
 }
 
-async fn cmd_export(path: String, course_id: Option<String>, login: LoginOpts) -> Result<()> {
-    let mut app = app::App::new().await?;
-    maybe_login(&app, &login).await?;
-
-    if let Some(id) = course_id {
-        app.set_course_id(id);
-        app.refresh_courses_v2().await?;
-    } else {
-        app.refresh_courses_default().await?;
-    }
-
-    app.export_courses(&PathBuf::from(&path))?;
-    Ok(())
-}
-
-async fn cmd_import(path: String, only_recordings: bool, output_dir: String) -> Result<()> {
-    let app = app::App::new().await?;
-    let courses = app.import_courses(&PathBuf::from(&path))?;
-
-    let tasks = download::generate_download_tasks(&courses, only_recordings);
-    if tasks.is_empty() {
-        return Err(anyhow::anyhow!("No videos found in imported data"));
-    }
-
-    println!("\nDownload preview:");
-    println!("{}", download::preview_tasks(&tasks));
-    println!();
-
-    download::download_courses(&tasks, &PathBuf::from(&output_dir), false, &app.client).await?;
-    Ok(())
-}
