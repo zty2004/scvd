@@ -980,7 +980,7 @@ fn parse_v2_video_detail(val: &serde_json::Value) -> Option<VideoInfo> {
     })
 }
 
-fn parse_v2_video_from_record(val: &serde_json::Value) -> Option<VideoInfo> {
+fn _parse_v2_video_from_record(val: &serde_json::Value) -> Option<VideoInfo> {
     // Field names from the actual v2 API response:
     // videoId, videoName, userName, classroomName, courId, courseBeginTime, courseEndTime, ...
     let name = val.get("videoName")
