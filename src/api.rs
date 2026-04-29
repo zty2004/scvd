@@ -2,12 +2,12 @@ use std::collections::HashMap;
 
 use anyhow::{Context, Result};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+use md5::{Digest, Md5};
 use rand::Rng;
-use scraper::{Html, Selector};
-use md5::{Md5, Digest};
-use url::Url;
-use std::sync::Arc;
 use reqwest::cookie::Jar;
+use scraper::{Html, Selector};
+use std::sync::Arc;
+use url::Url;
 
 use crate::types::{Course, VideoInfo};
 
@@ -67,9 +67,13 @@ fn decode_jwt_payload(token: &str) -> serde_json::Value {
     }
     let parts: Vec<&str> = token.split('.').collect();
     let payload = parts[1];
-    let padding = "====".chars().take((4 - payload.len() % 4) % 4).collect::<String>();
+    let padding = "===="
+        .chars()
+        .take((4 - payload.len() % 4) % 4)
+        .collect::<String>();
     let padded = format!("{}{}", payload, padding);
-    if let Ok(bytes) = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(&padded)
+    if let Ok(bytes) = base64::engine::general_purpose::URL_SAFE_NO_PAD
+        .decode(&padded)
         .or_else(|_| BASE64.decode(&padded))
     {
         serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null)
@@ -91,8 +95,14 @@ fn parse_redirect_params(url: &str) -> HashMap<String, String> {
                 for pair in query.split('&') {
                     if let Some((k, v)) = pair.split_once('=') {
                         params.insert(
-                            urlencoding::decode(k).ok().map(|s| s.into_owned()).unwrap_or(k.to_string()),
-                            urlencoding::decode(v).ok().map(|s| s.into_owned()).unwrap_or(v.to_string()),
+                            urlencoding::decode(k)
+                                .ok()
+                                .map(|s| s.into_owned())
+                                .unwrap_or(k.to_string()),
+                            urlencoding::decode(v)
+                                .ok()
+                                .map(|s| s.into_owned())
+                                .unwrap_or(v.to_string()),
                         );
                     }
                 }
@@ -179,7 +189,8 @@ fn iter_course_id_candidates(course_id: &str, canvas_course_id: Option<&str>) ->
 // ============================================================
 
 const OAUTH_HREF: &str = "https://courses.sjtu.edu.cn/app/vodvideo/vodVideoPlay.d2j";
-const OAUTH_PATH: &str = "aHR0cHM6Ly9jb3Vyc2VzLnNqdHUuZWR1LmNuL2FwcC92b2R2aWRlby92b2RWaWRlb1BsYXkuZDJq";
+const OAUTH_PATH: &str =
+    "aHR0cHM6Ly9jb3Vyc2VzLnNqdHUuZWR1LmNuL2FwcC92b2R2aWRlby92b2RWaWRlb1BsYXkuZDJq";
 
 const OAUTH_RANDOM_P1: &str = "oauth_ABCDE";
 const OAUTH_RANDOM_P1_VAL: &str = "ABCDEFGH";
@@ -190,7 +201,12 @@ const OAUTH_RANDOM_P2_VAL: &str = "STUVWXYZ";
 pub async fn get_oauth_consumer_key(client: &reqwest::Client) -> Result<Option<String>> {
     let resp = client
         .get(OAUTH_HREF)
-        .query(&[("ssoCheckToken", "ssoCheckToken"), ("refreshToken", ""), ("accessToken", ""), ("userId", "")])
+        .query(&[
+            ("ssoCheckToken", "ssoCheckToken"),
+            ("refreshToken", ""),
+            ("accessToken", ""),
+            ("userId", ""),
+        ])
         .send()
         .await
         .context("Failed to fetch VOD page")?;
@@ -200,7 +216,11 @@ pub async fn get_oauth_consumer_key(client: &reqwest::Client) -> Result<Option<S
     // The Python code looks for meta#xForSecName with attribute "vaule" (typo in the original)
     let meta_sel = Selector::parse("meta#xForSecName").unwrap();
     for meta in document.select(&meta_sel) {
-        if let Some(val) = meta.value().attr("vaule").or_else(|| meta.value().attr("value")) {
+        if let Some(val) = meta
+            .value()
+            .attr("vaule")
+            .or_else(|| meta.value().attr("value"))
+        {
             if let Ok(decoded) = BASE64.decode(val) {
                 if let Ok(s) = String::from_utf8(decoded) {
                     return Ok(Some(s));
@@ -244,8 +264,7 @@ pub async fn get_subject_ids(client: &reqwest::Client) -> Result<Vec<(String, St
         .await
         .context("Failed to fetch subject list")?;
 
-    let body: serde_json::Value = resp.json().await
-        .context("Failed to parse subject list")?;
+    let body: serde_json::Value = resp.json().await.context("Failed to parse subject list")?;
 
     let mut ids = Vec::new();
     if let Some(list) = body.get("list").and_then(|v| v.as_array()) {
@@ -269,14 +288,17 @@ pub async fn get_course_ids(
 ) -> Result<Option<Vec<String>>> {
     let resp = client
         .get("https://courses.sjtu.edu.cn/app/system/resource/vodVideo/getCourseListBySubject")
-        .query(&[("orderField", "courTimes"), ("subjectId", subject_id), ("teclId", tecl_id)])
+        .query(&[
+            ("orderField", "courTimes"),
+            ("subjectId", subject_id),
+            ("teclId", tecl_id),
+        ])
         .header("accept", "application/json")
         .send()
         .await
         .context("Failed to fetch course IDs")?;
 
-    let body: serde_json::Value = resp.json().await
-        .context("Failed to parse course IDs")?;
+    let body: serde_json::Value = resp.json().await.context("Failed to parse course IDs")?;
 
     let list = match body.get("list").and_then(|v| v.as_array()) {
         Some(l) => l,
@@ -326,8 +348,7 @@ pub async fn get_course(
         .await
         .context("Failed to fetch course info")?;
 
-    let mut body: serde_json::Value = resp.json().await
-        .context("Failed to parse course info")?;
+    let mut body: serde_json::Value = resp.json().await.context("Failed to parse course info")?;
 
     // Remove loginUserId like the Python code does
     if let Some(obj) = body.as_object_mut() {
@@ -381,13 +402,15 @@ pub async fn get_all_courses(client: &reqwest::Client) -> Result<Vec<Course>> {
 }
 
 fn parse_default_course(val: &serde_json::Value, _subject_id: &str) -> Option<Course> {
-    let name = val.get("vodCourseName")
+    let name = val
+        .get("vodCourseName")
         .or_else(|| val.get("courseName"))
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown")
         .to_string();
 
-    let teacher = val.get("teacherName")
+    let teacher = val
+        .get("teacherName")
         .or_else(|| val.get("teacher"))
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown")
@@ -400,7 +423,11 @@ fn parse_default_course(val: &serde_json::Value, _subject_id: &str) -> Option<Co
     };
 
     Some(Course {
-        id: val.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        id: val
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
         name,
         teacher,
         subject_name: String::new(),
@@ -409,29 +436,34 @@ fn parse_default_course(val: &serde_json::Value, _subject_id: &str) -> Option<Co
 }
 
 fn parse_video_from_json(val: &serde_json::Value) -> Option<VideoInfo> {
-    let url = val.get("url")
+    let url = val
+        .get("url")
         .or_else(|| val.get("downloadUrl"))
         .or_else(|| val.get("vodVideoUrl"))
         .and_then(|v| v.as_str())?
         .to_string();
 
-    let name = val.get("vodVideoName")
+    let name = val
+        .get("vodVideoName")
         .or_else(|| val.get("name"))
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown")
         .to_string();
 
-    let id = val.get("id")
+    let id = val
+        .get("id")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
 
-    let view_num = val.get("cdviViewNum")
+    let view_num = val
+        .get("cdviViewNum")
         .or_else(|| val.get("viewNum"))
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
 
-    let file_ext = val.get("fileExt")
+    let file_ext = val
+        .get("fileExt")
         .and_then(|v| v.as_str())
         .unwrap_or("mp4")
         .to_string();
@@ -518,10 +550,15 @@ pub async fn get_sub_cookies_v2(
         course_id, external_tool_id
     );
     eprintln!("[DEBUG] Step 1: GET {}", ext_url);
-    let resp = client.get(&ext_url).send().await
+    let resp = client
+        .get(&ext_url)
+        .send()
+        .await
         .context("Failed to visit external tool")?;
     eprintln!("[DEBUG] Step 1: final URL = {}", resp.url());
-    let body = resp.text().await
+    let body = resp
+        .text()
+        .await
         .context("Failed to read external tool page")?;
 
     // Step 2: Extract OIDC login initiation form
@@ -557,9 +594,15 @@ pub async fn get_sub_cookies_v2(
         }
         // Dump first 500 chars of the page for debugging
         eprintln!("[DEBUG] Page preview: {}...", &body[..body.len().min(500)]);
-        return Err(anyhow::anyhow!("未找到视频平台登录表单，可能是 Cookie 已失效，或课程页面结构已变化。"));
+        return Err(anyhow::anyhow!(
+            "未找到视频平台登录表单，可能是 Cookie 已失效，或课程页面结构已变化。"
+        ));
     }
-    eprintln!("[DEBUG] Step 2: launch_action = {}, fields = {}", launch_action, launch_data.len());
+    eprintln!(
+        "[DEBUG] Step 2: launch_action = {}, fields = {}",
+        launch_action,
+        launch_data.len()
+    );
 
     // Step 3: POST to OIDC login initiation (with cookies, allow redirects)
     eprintln!("[DEBUG] Step 3: POST to {}", launch_action);
@@ -570,9 +613,12 @@ pub async fn get_sub_cookies_v2(
         .await
         .context("Failed to POST OIDC login initiation")?;
 
-    eprintln!("[DEBUG] Step 3: final URL = {}, status = {}", resp2.url(), resp2.status());
-    let body2 = resp2.text().await
-        .context("Failed to read OIDC response")?;
+    eprintln!(
+        "[DEBUG] Step 3: final URL = {}, status = {}",
+        resp2.url(),
+        resp2.status()
+    );
+    let body2 = resp2.text().await.context("Failed to read OIDC response")?;
 
     // Step 4: Extract LTI3 auth form
     let document2 = Html::parse_document(&body2);
@@ -602,10 +648,19 @@ pub async fn get_sub_cookies_v2(
                 eprintln!("  form action = {}", action);
             }
         }
-        eprintln!("[DEBUG] Page preview: {}...", &body2[..body2.len().min(500)]);
-        return Err(anyhow::anyhow!("未找到 LTI 鉴权表单，可能是登录状态失效，或学校视频平台返回流程已变化。"));
+        eprintln!(
+            "[DEBUG] Page preview: {}...",
+            &body2[..body2.len().min(500)]
+        );
+        return Err(anyhow::anyhow!(
+            "未找到 LTI 鉴权表单，可能是登录状态失效，或学校视频平台返回流程已变化。"
+        ));
     }
-    eprintln!("[DEBUG] Step 4: auth_action = {}, fields = {}", auth_action, auth_data.len());
+    eprintln!(
+        "[DEBUG] Step 4: auth_action = {}, fields = {}",
+        auth_action,
+        auth_data.len()
+    );
 
     // Step 5: POST to LTI3 auth (no redirect following, but WITH cookies)
     // Build a new client that shares the same cookie jar but doesn't follow redirects
@@ -638,7 +693,10 @@ pub async fn get_sub_cookies_v2(
     // Since we can't extract cookies from the jar, let's try just using the
     // main client. If it follows the redirect, we can check the final URL
     // which should contain the tokenId.
-    eprintln!("[DEBUG] Step 5: POST to {} (will follow redirects)", auth_action);
+    eprintln!(
+        "[DEBUG] Step 5: POST to {} (will follow redirects)",
+        auth_action
+    );
     let resp3 = client
         .post(&auth_action)
         .form(&auth_data)
@@ -670,7 +728,9 @@ pub async fn get_sub_cookies_v2(
             .await
             .context("Failed to POST LTI3 auth (no-redirect)")?;
 
-        let loc = resp3b.headers().get("location")
+        let loc = resp3b
+            .headers()
+            .get("location")
             .map(|h| h.to_str().unwrap_or(""))
             .unwrap_or("")
             .to_string();
@@ -678,33 +738,60 @@ pub async fn get_sub_cookies_v2(
 
         let params2 = parse_redirect_params(&loc);
         eprintln!("[DEBUG] Step 5b: params = {:?}", params2);
-        params2.get("tokenId").cloned()
-            .ok_or_else(|| anyhow::anyhow!("未能从视频平台跳转中解析 tokenId，final_url={}, params={:?}", final_url3, params_dict))?
+        params2.get("tokenId").cloned().ok_or_else(|| {
+            anyhow::anyhow!(
+                "未能从视频平台跳转中解析 tokenId，final_url={}, params={:?}",
+                final_url3,
+                params_dict
+            )
+        })?
     };
 
-    let canvas_course_id = get_canvas_course_id(&params_dict, &[
-        serde_json::Value::Object(launch_data.iter().map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone()))).collect()),
-        serde_json::Value::Object(auth_data.iter().map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone()))).collect()),
-    ]);
-    eprintln!("[DEBUG] canvas_course_id from redirect = {:?}", canvas_course_id);
+    let canvas_course_id = get_canvas_course_id(
+        &params_dict,
+        &[
+            serde_json::Value::Object(
+                launch_data
+                    .iter()
+                    .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                    .collect(),
+            ),
+            serde_json::Value::Object(
+                auth_data
+                    .iter()
+                    .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                    .collect(),
+            ),
+        ],
+    );
+    eprintln!(
+        "[DEBUG] canvas_course_id from redirect = {:?}",
+        canvas_course_id
+    );
 
     // Step 6: Exchange tokenId for access token
-    eprintln!("[DEBUG] Step 6: Exchanging token for tokenId = {}", token_id);
+    eprintln!(
+        "[DEBUG] Step 6: Exchanging token for tokenId = {}",
+        token_id
+    );
     let token_payload = exchange_token(client, &token_id).await?;
     eprintln!("[DEBUG] Step 6: token_payload = {:?}", token_payload);
 
-    let access_token = token_payload.get("token")
+    let access_token = token_payload
+        .get("token")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow::anyhow!("Access token not found in response"))?
         .to_string();
 
     // Use params.courId as canonical course id
-    let access_params = token_payload.get("params")
+    let access_params = token_payload
+        .get("params")
         .and_then(|v| v.as_object())
         .cloned()
         .unwrap_or_default();
 
-    let final_course_id = access_params.get("courId")
+    let final_course_id = access_params
+        .get("courId")
         .or_else(|| access_params.get("canvasCourseId"))
         .or_else(|| access_params.get("courseId"))
         .or_else(|| access_params.get("ltiCourseId"))
@@ -713,7 +800,11 @@ pub async fn get_sub_cookies_v2(
         .or(canvas_course_id)
         .unwrap_or_default();
 
-    eprintln!("[DEBUG] final_course_id = {}, access_token length = {}", final_course_id, access_token.len());
+    eprintln!(
+        "[DEBUG] final_course_id = {}, access_token length = {}",
+        final_course_id,
+        access_token.len()
+    );
 
     let mut v_header = HashMap::new();
     v_header.insert("token".to_string(), access_token);
@@ -722,10 +813,7 @@ pub async fn get_sub_cookies_v2(
 }
 
 /// Exchange tokenId for access token (GET request, not POST).
-async fn exchange_token(
-    client: &reqwest::Client,
-    token_id: &str,
-) -> Result<serde_json::Value> {
+async fn exchange_token(client: &reqwest::Client, token_id: &str) -> Result<serde_json::Value> {
     let resp = client
         .get("https://v.sjtu.edu.cn/jy-application-canvas-sjtu/lti3/getAccessTokenByTokenId")
         .query(&[("tokenId", token_id)])
@@ -733,10 +821,13 @@ async fn exchange_token(
         .await
         .context("Failed to exchange token")?;
 
-    let json: serde_json::Value = resp.json().await
+    let json: serde_json::Value = resp
+        .json()
+        .await
         .context("Failed to parse token response")?;
 
-    json.get("data").cloned()
+    json.get("data")
+        .cloned()
         .ok_or_else(|| anyhow::anyhow!("data not found in token response"))
 }
 
@@ -751,10 +842,15 @@ pub async fn get_real_canvas_video_single_v2(
     form.insert("id", video_id);
     form.insert("isAudit", "true");
 
-    eprintln!("[DEBUG] get_real_canvas_video_single_v2: videoId = {}", video_id);
+    eprintln!(
+        "[DEBUG] get_real_canvas_video_single_v2: videoId = {}",
+        video_id
+    );
 
     let resp = client
-        .post("https://v.sjtu.edu.cn/jy-application-canvas-sjtu/directOnDemandPlay/getVodVideoInfos")
+        .post(
+            "https://v.sjtu.edu.cn/jy-application-canvas-sjtu/directOnDemandPlay/getVodVideoInfos",
+        )
         .form(&form)
         .headers({
             let mut h = reqwest::header::HeaderMap::new();
@@ -768,13 +864,22 @@ pub async fn get_real_canvas_video_single_v2(
         .await
         .context("Failed to fetch video detail")?;
 
-    eprintln!("[DEBUG] get_real_canvas_video_single_v2: status = {}", resp.status());
-    let json: serde_json::Value = resp.json().await
-        .context("Failed to parse video detail")?;
+    eprintln!(
+        "[DEBUG] get_real_canvas_video_single_v2: status = {}",
+        resp.status()
+    );
+    let json: serde_json::Value = resp.json().await.context("Failed to parse video detail")?;
 
-    eprintln!("[DEBUG] get_real_canvas_video_single_v2: response keys = {:?}", json.as_object().map(|o| o.keys().collect::<Vec<_>>()));
-    let detail = extract_detail(&json)
-        .ok_or_else(|| anyhow::anyhow!("视频详情接口未返回可识别的数据。返回字段: {:?}", json.as_object().map(|o| o.keys().collect::<Vec<_>>())))?;
+    eprintln!(
+        "[DEBUG] get_real_canvas_video_single_v2: response keys = {:?}",
+        json.as_object().map(|o| o.keys().collect::<Vec<_>>())
+    );
+    let detail = extract_detail(&json).ok_or_else(|| {
+        anyhow::anyhow!(
+            "视频详情接口未返回可识别的数据。返回字段: {:?}",
+            json.as_object().map(|o| o.keys().collect::<Vec<_>>())
+        )
+    })?;
 
     Ok(detail.clone())
 }
@@ -787,7 +892,10 @@ async fn request_video_list(
     canvas_course_id: Option<&str>,
 ) -> Result<Vec<serde_json::Value>> {
     let candidates = iter_course_id_candidates(course_id, canvas_course_id);
-    eprintln!("[DEBUG] request_video_list: candidate IDs = {:?}", candidates);
+    eprintln!(
+        "[DEBUG] request_video_list: candidate IDs = {:?}",
+        candidates
+    );
 
     let mut bodies = Vec::new();
     for cid in &candidates {
@@ -818,14 +926,26 @@ async fn request_video_list(
 
         if let Ok(r) = resp {
             if let Ok(json) = r.json::<serde_json::Value>().await {
-                eprintln!("[DEBUG] request_video_list body={:?} -> code={:?}, data_type={:?}",
+                eprintln!(
+                    "[DEBUG] request_video_list body={:?} -> code={:?}, data_type={:?}",
                     body,
                     json.get("code"),
-                    json.get("data").map(|d| if d.is_array() { "array" } else if d.is_object() { "object" } else if d.is_null() { "null" } else { "other" })
+                    json.get("data").map(|d| if d.is_array() {
+                        "array"
+                    } else if d.is_object() {
+                        "object"
+                    } else if d.is_null() {
+                        "null"
+                    } else {
+                        "other"
+                    })
                 );
                 last_payload = json.clone();
                 if let Some(records) = extract_records(&json) {
-                    eprintln!("[DEBUG] request_video_list: found {} records", records.len());
+                    eprintln!(
+                        "[DEBUG] request_video_list: found {} records",
+                        records.len()
+                    );
                     return Ok(records.into_iter().cloned().collect());
                 }
             }
@@ -836,8 +956,15 @@ async fn request_video_list(
         format!(
             "code={:?}, message={:?}, data_type={:?}",
             last_payload.get("code"),
-            last_payload.get("message").or_else(|| last_payload.get("msg")),
-            last_payload.get("data").map(|v| match v { serde_json::Value::Null => "null", serde_json::Value::Array(_) => "array", serde_json::Value::Object(_) => "object", _ => "other" }),
+            last_payload
+                .get("message")
+                .or_else(|| last_payload.get("msg")),
+            last_payload.get("data").map(|v| match v {
+                serde_json::Value::Null => "null",
+                serde_json::Value::Array(_) => "array",
+                serde_json::Value::Object(_) => "object",
+                _ => "other",
+            }),
         )
     } else {
         String::new()
@@ -845,7 +972,8 @@ async fn request_video_list(
 
     Err(anyhow::anyhow!(
         "视频列表接口未返回可识别的数据。尝试的课程ID: {:?}，最后一次返回: {}",
-        candidates, summary
+        candidates,
+        summary
     ))
 }
 
@@ -856,14 +984,12 @@ pub async fn get_real_canvas_videos_v2(
 ) -> Result<Vec<Course>> {
     let (canvas_course_id, v_header) = get_sub_cookies_v2(client, course_id).await?;
 
-    let records = request_video_list(
-        client,
-        &v_header,
-        course_id,
-        Some(&canvas_course_id),
-    ).await?;
+    let records = request_video_list(client, &v_header, course_id, Some(&canvas_course_id)).await?;
 
-    eprintln!("[DEBUG] get_real_canvas_videos_v2: got {} records", records.len());
+    eprintln!(
+        "[DEBUG] get_real_canvas_videos_v2: got {} records",
+        records.len()
+    );
 
     // Each record represents one lecture. For each, fetch the detail to get
     // the actual download URL and course metadata (subjName, userName, courName).
@@ -871,11 +997,15 @@ pub async fn get_real_canvas_videos_v2(
     let mut courses = Vec::new();
 
     for record in &records {
-        let video_id = record.get("videoId")
+        let video_id = record
+            .get("videoId")
             .or_else(|| record.get("id"))
             .map(|v| {
-                if v.is_string() { v.as_str().unwrap_or("").to_string() }
-                else { v.to_string() }
+                if v.is_string() {
+                    v.as_str().unwrap_or("").to_string()
+                } else {
+                    v.to_string()
+                }
             })
             .unwrap_or_default();
 
@@ -888,32 +1018,47 @@ pub async fn get_real_canvas_videos_v2(
         let detail = match get_real_canvas_video_single_v2(client, &video_id, &v_header).await {
             Ok(d) => d,
             Err(e) => {
-                eprintln!("[DEBUG] Failed to get detail for videoId={}: {}", video_id, e);
+                eprintln!(
+                    "[DEBUG] Failed to get detail for videoId={}: {}",
+                    video_id, e
+                );
                 continue;
             }
         };
 
         // Extract course-level metadata from the detail response
-        let subj_name = detail.get("subjName")
+        let subj_name = detail
+            .get("subjName")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        let user_name = detail.get("userName")
+        let user_name = detail
+            .get("userName")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        let cour_name = detail.get("courName")
+        let cour_name = detail
+            .get("courName")
             .or_else(|| detail.get("courseName"))
             .and_then(|v| v.as_str())
             .unwrap_or("Course")
             .to_string();
 
         // Extract videos from videoPlayResponseVoList
-        let videos = if let Some(vlist) = detail.get("videoPlayResponseVoList").and_then(|v| v.as_array()) {
-            vlist.iter().filter_map(|v| parse_v2_video_detail(v)).collect::<Vec<_>>()
+        let videos = if let Some(vlist) = detail
+            .get("videoPlayResponseVoList")
+            .and_then(|v| v.as_array())
+        {
+            vlist
+                .iter()
+                .filter_map(|v| parse_v2_video_detail(v))
+                .collect::<Vec<_>>()
         } else {
-            eprintln!("[DEBUG] Detail for videoId={} has no videoPlayResponseVoList, keys: {:?}",
-                video_id, detail.as_object().map(|o| o.keys().collect::<Vec<_>>()));
+            eprintln!(
+                "[DEBUG] Detail for videoId={} has no videoPlayResponseVoList, keys: {:?}",
+                video_id,
+                detail.as_object().map(|o| o.keys().collect::<Vec<_>>())
+            );
             Vec::new()
         };
 
@@ -928,45 +1073,60 @@ pub async fn get_real_canvas_videos_v2(
         }
     }
 
-    eprintln!("[DEBUG] Built {} courses from {} records", courses.len(), records.len());
+    eprintln!(
+        "[DEBUG] Built {} courses from {} records",
+        courses.len(),
+        records.len()
+    );
     Ok(courses)
 }
 
 /// Parse a single video entry from the videoPlayResponseVoList array
 /// in the detail response. The actual download URL is in "rtmpUrlHdv".
 fn parse_v2_video_detail(val: &serde_json::Value) -> Option<VideoInfo> {
-    let url = val.get("rtmpUrlHdv")
+    let url = val
+        .get("rtmpUrlHdv")
         .or_else(|| val.get("downloadUrl"))
         .or_else(|| val.get("url"))
         .and_then(|v| v.as_str())?
         .to_string();
 
-    let name = val.get("vodVideoName")
+    let name = val
+        .get("vodVideoName")
         .or_else(|| val.get("videoName"))
         .or_else(|| val.get("name"))
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown")
         .to_string();
 
-    let id = val.get("id")
+    let id = val
+        .get("id")
         .or_else(|| val.get("vodVideoId"))
         .or_else(|| val.get("videoId"))
         .and_then(|v| {
-            if v.is_string() { v.as_str().map(String::from) }
-            else if v.is_number() { Some(v.to_string()) }
-            else { None }
+            if v.is_string() {
+                v.as_str().map(String::from)
+            } else if v.is_number() {
+                Some(v.to_string())
+            } else {
+                None
+            }
         })
         .unwrap_or_default();
 
-    let view_num = val.get("cdviViewNum")
+    let view_num = val
+        .get("cdviViewNum")
         .or_else(|| val.get("viewNum"))
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
 
     // Determine file extension from the URL
-    let file_ext = url.rsplit('.').next()
+    let file_ext = url
+        .rsplit('.')
+        .next()
         .unwrap_or("mp4")
-        .split('?').next()
+        .split('?')
+        .next()
         .unwrap_or("mp4")
         .to_string();
 
@@ -983,31 +1143,39 @@ fn parse_v2_video_detail(val: &serde_json::Value) -> Option<VideoInfo> {
 fn _parse_v2_video_from_record(val: &serde_json::Value) -> Option<VideoInfo> {
     // Field names from the actual v2 API response:
     // videoId, videoName, userName, classroomName, courId, courseBeginTime, courseEndTime, ...
-    let name = val.get("videoName")
+    let name = val
+        .get("videoName")
         .or_else(|| val.get("vodVideoName"))
         .or_else(|| val.get("name"))
         .and_then(|v| v.as_str())?
         .to_string();
 
-    let view_num = val.get("cdviViewNum")
+    let view_num = val
+        .get("cdviViewNum")
         .or_else(|| val.get("viewNum"))
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
 
-    let file_ext = val.get("fileExt")
+    let file_ext = val
+        .get("fileExt")
         .or_else(|| val.get("ext"))
         .and_then(|v| v.as_str())
         .unwrap_or("mp4")
         .to_string();
 
-    let id = val.get("videoId")
+    let id = val
+        .get("videoId")
         .or_else(|| val.get("id"))
         .or_else(|| val.get("vodVideoId"))
         .and_then(|v| {
             // videoId might be a number, convert to string
-            if v.is_string() { v.as_str().map(String::from) }
-            else if v.is_number() { Some(v.to_string()) }
-            else { None }
+            if v.is_string() {
+                v.as_str().map(String::from)
+            } else if v.is_number() {
+                Some(v.to_string())
+            } else {
+                None
+            }
         })
         .unwrap_or_default();
 

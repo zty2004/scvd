@@ -2,11 +2,11 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
-use crate::config;
-use crate::types::{Course, DownloadTask, VideoInfo};
-use crate::login;
 use crate::api;
+use crate::config;
 use crate::download;
+use crate::login;
+use crate::types::{Course, DownloadTask, VideoInfo};
 
 fn print_captcha_in_terminal(img: &image::DynamicImage) -> Result<()> {
     // Add some vertical spacing so we don't overwrite recent terminal output.
@@ -45,12 +45,19 @@ impl App {
     }
 
     /// Login with username/password + captcha.
-    pub async fn login_pwd(&self, username: &str, password: &str, captcha_opt: Option<String>) -> Result<()> {
+    pub async fn login_pwd(
+        &self,
+        username: &str,
+        password: &str,
+        captcha_opt: Option<String>,
+    ) -> Result<()> {
         println!("Connecting to jAccount login...");
-        let login_info = login::get_params_uuid_cookies(&self.client, login::CANVAS_LOGIN_URL).await?;
+        let login_info =
+            login::get_params_uuid_cookies(&self.client, login::CANVAS_LOGIN_URL).await?;
         println!("Login page loaded. Fetching captcha...");
 
-        let captcha_bytes = login::get_captcha_bytes(&self.client, &login_info.uuid, &login_info.final_url).await?;
+        let captcha_bytes =
+            login::get_captcha_bytes(&self.client, &login_info.uuid, &login_info.final_url).await?;
 
         let captcha = if let Some(c) = captcha_opt {
             // Save captcha image to file so user can view it
@@ -88,9 +95,14 @@ impl App {
 
         println!("Submitting login...");
         let success = login::login(
-            &self.client, username, password,
-            &login_info.uuid, &captcha, &login_info.params,
-        ).await?;
+            &self.client,
+            username,
+            password,
+            &login_info.uuid,
+            &captcha,
+            &login_info.params,
+        )
+        .await?;
 
         if !success {
             return Err(anyhow::anyhow!(
@@ -117,8 +129,12 @@ impl App {
 
     /// Fetch courses using the v2 OIDC/LTI3 flow (course ID mode).
     pub async fn refresh_courses_v2(&mut self) -> Result<()> {
-        let course_id = self.course_id.as_ref()
-            .ok_or_else(|| anyhow::anyhow!("No course ID set. Use --course-id or set it via config."))?
+        let course_id = self
+            .course_id
+            .as_ref()
+            .ok_or_else(|| {
+                anyhow::anyhow!("No course ID set. Use --course-id or set it via config.")
+            })?
             .clone();
 
         println!("Fetching course {} via v2 API...", course_id);
@@ -177,7 +193,11 @@ impl App {
                     continue;
                 }
 
-                let ext = if video.file_ext.is_empty() { "mp4" } else { &video.file_ext };
+                let ext = if video.file_ext.is_empty() {
+                    "mp4"
+                } else {
+                    &video.file_ext
+                };
                 let filename = format!(
                     "{}_{}_{}_{:03}.{}",
                     download::sanitize_filename(&course.subject_name),
@@ -216,7 +236,9 @@ impl App {
         only_recordings: bool,
         output_dir: &PathBuf,
     ) -> Result<()> {
-        let course = self.courses.get(course_index)
+        let course = self
+            .courses
+            .get(course_index)
             .ok_or_else(|| anyhow::anyhow!("Course index {} out of range", course_index + 1))?;
 
         let mut sorted_videos = course.videos.clone();
@@ -226,7 +248,12 @@ impl App {
         let end_idx = end.min(sorted_videos.len());
 
         if start_idx >= end_idx {
-            return Err(anyhow::anyhow!("Invalid range: {}-{} (total: {} videos)", start, end, sorted_videos.len()));
+            return Err(anyhow::anyhow!(
+                "Invalid range: {}-{} (total: {} videos)",
+                start,
+                end,
+                sorted_videos.len()
+            ));
         }
 
         let mut tasks: Vec<DownloadTask> = Vec::new();
@@ -240,7 +267,11 @@ impl App {
                 continue;
             }
 
-            let ext = if video.file_ext.is_empty() { "mp4" } else { &video.file_ext };
+            let ext = if video.file_ext.is_empty() {
+                "mp4"
+            } else {
+                &video.file_ext
+            };
             tasks.push(DownloadTask {
                 url: video.url.clone(),
                 filename: format!(
@@ -281,7 +312,11 @@ impl App {
             return Err(anyhow::anyhow!("Lecture numbers must be >= 1"));
         }
         if start > end {
-            return Err(anyhow::anyhow!("Invalid lecture range: start ({}) > end ({})", start, end));
+            return Err(anyhow::anyhow!(
+                "Invalid lecture range: start ({}) > end ({})",
+                start,
+                end
+            ));
         }
 
         if self.courses.is_empty() {
@@ -290,14 +325,15 @@ impl App {
 
         let (subject_name, teacher, course_name) = {
             let first = &self.courses[0];
-            (first.subject_name.clone(), first.teacher.clone(), first.name.clone())
+            (
+                first.subject_name.clone(),
+                first.teacher.clone(),
+                first.name.clone(),
+            )
         };
 
-        let mut all_videos: Vec<VideoInfo> = self
-            .courses
-            .iter()
-            .flat_map(|c| c.videos.clone())
-            .collect();
+        let mut all_videos: Vec<VideoInfo> =
+            self.courses.iter().flat_map(|c| c.videos.clone()).collect();
 
         if all_videos.is_empty() {
             return Err(anyhow::anyhow!("No videos found for this course"));
@@ -329,7 +365,11 @@ impl App {
                 continue;
             }
 
-            let ext = if video.file_ext.is_empty() { "mp4" } else { &video.file_ext };
+            let ext = if video.file_ext.is_empty() {
+                "mp4"
+            } else {
+                &video.file_ext
+            };
             tasks.push(DownloadTask {
                 url: video.url.clone(),
                 filename: format!(
@@ -370,7 +410,8 @@ impl App {
         if total == 0 {
             return Err(anyhow::anyhow!("No videos found for this course"));
         }
-        self.download_lecture_range(1, total, only_recordings, output_dir).await
+        self.download_lecture_range(1, total, only_recordings, output_dir)
+            .await
     }
 
     /// Set course ID.
