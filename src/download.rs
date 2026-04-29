@@ -11,6 +11,27 @@ use indicatif::{ProgressBar, ProgressStyle};
 use crate::history;
 use crate::types::{DownloadTask, HistoryEntry};
 
+#[derive(Debug)]
+enum Aria2cError {
+    NotFound,
+    PrepareInputFailed(anyhow::Error),
+    LaunchFailed(anyhow::Error),
+    NonZeroExit(std::process::ExitStatus),
+}
+
+impl std::fmt::Display for Aria2cError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Aria2cError::NotFound => write!(f, "aria2c not found"),
+            Aria2cError::PrepareInputFailed(e) => write!(f, "failed to prepare aria2c input: {e}"),
+            Aria2cError::LaunchFailed(e) => write!(f, "failed to start aria2c: {e}"),
+            Aria2cError::NonZeroExit(status) => write!(f, "aria2c exited with status: {status}"),
+        }
+    }
+}
+
+impl std::error::Error for Aria2cError {}
+
 /// Find the aria2c binary (bundled or from PATH).
 pub fn find_aria2c() -> Option<String> {
     // Try bundled binary on Windows
@@ -31,20 +52,87 @@ pub fn find_aria2c() -> Option<String> {
 }
 
 fn which_aria2c() -> Option<String> {
-    // Use std::env::PATH to search
-    if let Ok(path_env) = std::env::var("PATH") {
-        for dir in path_env.split(':') {
-            let exe_path = Path::new(dir).join(if cfg!(windows) {
-                "aria2c.exe"
-            } else {
-                "aria2c"
-            });
-            if exe_path.exists() {
-                return Some(exe_path.to_string_lossy().to_string());
-            }
-        }
+    which::which("aria2c")
+        .ok()
+        .map(|p| p.to_string_lossy().to_string())
+}
+
+fn resolve_aria2c_binary() -> std::result::Result<PathBuf, Aria2cError> {
+    find_aria2c().map(PathBuf::from).ok_or(Aria2cError::NotFound)
+}
+
+fn build_aria2_input_file(tasks: &[DownloadTask], output_dir: &Path) -> std::result::Result<PathBuf, Aria2cError> {
+    let tmp_dir = output_dir.join(".sjtu_canvas_tmp");
+    std::fs::create_dir_all(&tmp_dir).map_err(|e| Aria2cError::PrepareInputFailed(e.into()))?;
+
+    let input_path = tmp_dir.join(format!(
+        "aria2_{}.txt",
+        chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)
+    ));
+
+    let file = File::create(&input_path)
+        .with_context(|| format!("Failed to write aria2c input file: {}", input_path.display()))
+        .map_err(Aria2cError::PrepareInputFailed)?;
+    let mut writer = BufWriter::new(file);
+
+    for task in tasks {
+        writeln!(writer, "{}", task.url).map_err(|e| Aria2cError::PrepareInputFailed(e.into()))?;
+        writeln!(writer, "  out={}", task.filename)
+            .map_err(|e| Aria2cError::PrepareInputFailed(e.into()))?;
+        writeln!(writer, "  header=referer: https://v.sjtu.edu.cn")
+            .map_err(|e| Aria2cError::PrepareInputFailed(e.into()))?;
     }
-    None
+    writer
+        .flush()
+        .map_err(|e| Aria2cError::PrepareInputFailed(e.into()))?;
+
+    Ok(input_path)
+}
+
+fn cleanup_aria2_temp(input_path: &Path) {
+    let _ = std::fs::remove_file(input_path);
+    if let Some(parent) = input_path.parent() {
+        // only remove if empty
+        let _ = std::fs::remove_dir(parent);
+    }
+}
+
+fn run_aria2c(binary: &Path, input_path: &Path, output_dir: &Path) -> std::result::Result<(), Aria2cError> {
+    let mut cmd = Command::new(binary);
+    cmd.arg("-d")
+        .arg(output_dir)
+        .arg("-i")
+        .arg(input_path)
+        .arg("-x")
+        .arg("16")
+        .arg("--auto-file-renaming=false")
+        .arg("--summary-interval=1");
+
+    let status = cmd.status().map_err(|e| Aria2cError::LaunchFailed(e.into()))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(Aria2cError::NonZeroExit(status))
+    }
+}
+
+fn run_default_aria2c_download(tasks: &[DownloadTask], output_dir: &Path) -> std::result::Result<(), Aria2cError> {
+    let binary = resolve_aria2c_binary()?;
+    let input_path = build_aria2_input_file(tasks, output_dir)?;
+
+    println!("\n{}", style("Downloader: aria2c (default)").green().bold());
+    println!(
+        "{} {}",
+        style("Output directory:").cyan(),
+        output_dir.display()
+    );
+    println!("{} {}", style("Total files:").cyan(), tasks.len());
+    println!("{} This may take a while...\n", style("Info:").yellow());
+
+    let res = run_aria2c(&binary, &input_path, output_dir);
+    cleanup_aria2_temp(&input_path);
+    res
 }
 
 /// Sanitize a filename for the filesystem.
@@ -65,62 +153,10 @@ pub fn preview_tasks(tasks: &[DownloadTask]) -> String {
         .join("\n")
 }
 
+#[allow(dead_code)]
 /// Download using aria2c with an input file.
 pub fn download_with_aria2c(tasks: &[DownloadTask], output_dir: &Path) -> Result<()> {
-    let aria2c = find_aria2c().ok_or_else(|| anyhow::anyhow!("aria2c not found"))?;
-
-    // Generate aria2c input file
-    let tmp_dir = output_dir.join(".sjtu_canvas_tmp");
-    std::fs::create_dir_all(&tmp_dir)?;
-
-    let input_path = tmp_dir.join(format!(
-        "aria2_{}.txt",
-        chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)
-    ));
-
-    let file = File::create(&input_path).context("Failed to write aria2c input file")?;
-    let mut writer = BufWriter::new(file);
-
-    for task in tasks {
-        writeln!(writer, "{}", task.url)?;
-        writeln!(writer, "  out={}", task.filename)?;
-        writeln!(writer, "  header=referer: https://v.sjtu.edu.cn")?;
-    }
-    writer.flush()?;
-
-    println!("\n{}", style("Starting aria2c download...").green().bold());
-    println!(
-        "{} {}",
-        style("Output directory:").cyan(),
-        output_dir.display()
-    );
-    println!("{} {}", style("Total files:").cyan(), tasks.len());
-    println!("{} This may take a while...\n", style("Info:").yellow());
-
-    let mut cmd = Command::new(&aria2c);
-    cmd.arg("-d")
-        .arg(output_dir)
-        .arg("-i")
-        .arg(&input_path)
-        .arg("-x")
-        .arg("16")
-        .arg("--auto-file-renaming=false")
-        .arg("--summary-interval=1"); // Update progress every second
-
-    let status = cmd.status().context("Failed to start aria2c")?;
-
-    let _ = std::fs::remove_file(&input_path);
-    let _ = std::fs::remove_dir(&tmp_dir);
-
-    if status.success() {
-        println!("\n{} aria2c download completed!", style("✓").green().bold());
-        Ok(())
-    } else {
-        Err(anyhow::anyhow!(
-            "aria2c exited with non-zero status: {:?}",
-            status
-        ))
-    }
+    run_default_aria2c_download(tasks, output_dir).map_err(|e| anyhow::anyhow!(e))
 }
 
 /// Fallback: download each file using reqwest streaming with progress bar.
@@ -236,6 +272,9 @@ pub async fn download_courses(
     }
 
     println!("{} videos to download.", tasks.len());
+    println!("{}", style("Downloader preference:").cyan());
+    println!("  - aria2c (default)");
+    println!("  - built-in downloader (fallback)\n");
 
     // Record in history
     if !no_record {
@@ -251,12 +290,36 @@ pub async fn download_courses(
         });
     }
 
-    // Try aria2c first, fall back to reqwest streaming
-    match download_with_aria2c(tasks, output_dir) {
-        Ok(_) => return Ok(()),
-        Err(e) => {
-            println!("aria2c not available: {}", e);
-            println!("Falling back to built-in downloader (slower)...");
+    // Default: aria2c. Fallback: reqwest streaming.
+    match run_default_aria2c_download(tasks, output_dir) {
+        Ok(()) => {
+            println!("\n{} aria2c download completed!", style("✓").green().bold());
+            return Ok(());
+        }
+        Err(Aria2cError::NotFound) => {
+            println!(
+                "{} aria2c not found, using built-in downloader...",
+                style("!").yellow().bold()
+            );
+        }
+        Err(Aria2cError::LaunchFailed(e)) => {
+            println!(
+                "{} aria2c failed to start: {}\n{} Using built-in downloader...",
+                style("!").yellow().bold(),
+                e,
+                style("Info:").yellow()
+            );
+        }
+        Err(Aria2cError::NonZeroExit(status)) => {
+            println!(
+                "{} aria2c exited with status {}, falling back to built-in downloader...",
+                style("!").yellow().bold(),
+                status
+            );
+        }
+        Err(Aria2cError::PrepareInputFailed(e)) => {
+            // local prepare errors should be surfaced; don't pretend aria2c is unavailable
+            return Err(e);
         }
     }
 

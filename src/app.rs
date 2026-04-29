@@ -120,6 +120,7 @@ impl App {
     }
 
     /// Fetch all courses using the default VOD API.
+    #[allow(dead_code)]
     pub async fn refresh_courses_default(&mut self) -> Result<()> {
         println!("Fetching enrolled courses...");
         self.courses = api::get_all_courses(&self.client).await?;
@@ -144,6 +145,7 @@ impl App {
     }
 
     /// Print the course list.
+    #[allow(dead_code)]
     pub fn print_courses(&self) {
         if self.courses.is_empty() {
             println!("No courses found.");

@@ -189,16 +189,23 @@ fn iter_course_id_candidates(course_id: &str, canvas_course_id: Option<&str>) ->
 // Default mode: courses.sjtu.edu.cn VOD API (OAuth)
 // ============================================================
 
+#[allow(dead_code)]
 const OAUTH_HREF: &str = "https://courses.sjtu.edu.cn/app/vodvideo/vodVideoPlay.d2j";
+#[allow(dead_code)]
 const OAUTH_PATH: &str =
     "aHR0cHM6Ly9jb3Vyc2VzLnNqdHUuZWR1LmNuL2FwcC92b2R2aWRlby92b2RWaWRlb1BsYXkuZDJq";
 
+#[allow(dead_code)]
 const OAUTH_RANDOM_P1: &str = "oauth_ABCDE";
+#[allow(dead_code)]
 const OAUTH_RANDOM_P1_VAL: &str = "ABCDEFGH";
+#[allow(dead_code)]
 const OAUTH_RANDOM_P2: &str = "oauth_VWXYZ";
+#[allow(dead_code)]
 const OAUTH_RANDOM_P2_VAL: &str = "STUVWXYZ";
 
 /// Extract OAuth consumer key from the VOD page.
+#[allow(dead_code)]
 pub async fn get_oauth_consumer_key(client: &reqwest::Client) -> Result<Option<String>> {
     let resp = client
         .get(OAUTH_HREF)
@@ -243,6 +250,7 @@ fn _random_uuid(len: usize) -> String {
         .collect()
 }
 
+#[allow(dead_code)]
 fn get_oauth_signature(course_id: &str, oauth_nonce: &str, oauth_consumer_key: &str) -> String {
     let source = format!(
         "/app/system/resource/vodVideo/getvideoinfos?id={}&oauth-consumer-key={}&oauth-nonce={}&oauth-path={}&{}={}&{}={}&playTypeHls=true",
@@ -256,6 +264,7 @@ fn get_oauth_signature(course_id: &str, oauth_nonce: &str, oauth_consumer_key: &
 }
 
 /// Fetch enrolled subject IDs.
+#[allow(dead_code)]
 pub async fn get_subject_ids(client: &reqwest::Client) -> Result<Vec<(String, String)>> {
     let resp = client
         .get("https://courses.sjtu.edu.cn/app/system/course/subject/findSubjectVodList")
@@ -282,6 +291,7 @@ pub async fn get_subject_ids(client: &reqwest::Client) -> Result<Vec<(String, St
 }
 
 /// Fetch course IDs for a subject.
+#[allow(dead_code)]
 pub async fn get_course_ids(
     client: &reqwest::Client,
     subject_id: &str,
@@ -323,6 +333,7 @@ pub async fn get_course_ids(
 }
 
 /// Fetch course/video details with OAuth headers.
+#[allow(dead_code)]
 pub async fn get_course(
     client: &reqwest::Client,
     course_id: &str,
@@ -360,6 +371,7 @@ pub async fn get_course(
 }
 
 /// Top-level: fetch all enrolled courses via the default VOD API.
+#[allow(dead_code)]
 pub async fn get_all_courses(client: &reqwest::Client) -> Result<Vec<Course>> {
     let consumer_key = match get_oauth_consumer_key(client).await? {
         Some(k) => k,
@@ -402,6 +414,7 @@ pub async fn get_all_courses(client: &reqwest::Client) -> Result<Vec<Course>> {
     Ok(all_courses)
 }
 
+#[allow(dead_code)]
 fn parse_default_course(val: &serde_json::Value, _subject_id: &str) -> Option<Course> {
     let name = val
         .get("vodCourseName")
@@ -436,6 +449,7 @@ fn parse_default_course(val: &serde_json::Value, _subject_id: &str) -> Option<Co
     })
 }
 
+#[allow(dead_code)]
 fn parse_video_from_json(val: &serde_json::Value) -> Option<VideoInfo> {
     let url = val
         .get("url")
