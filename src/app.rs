@@ -391,6 +391,8 @@ impl App {
         self.download_lecture_range(1, total, only_recordings, output_dir).await
     }
 
+    /// Export course data to JSON.
+    pub fn export_courses(&self, path: &PathBuf) -> Result<()> {
         let content = serde_json::to_string_pretty(&self.courses)
             .context("Failed to serialize courses")?;
         std::fs::write(path, content)
