@@ -5,7 +5,6 @@ use anyhow::{Context, Result};
 use crate::config;
 use crate::types::{Course, DownloadTask, VideoInfo};
 use crate::login;
-use crate::qr_login;
 use crate::api;
 use crate::download;
 
@@ -108,67 +107,6 @@ impl App {
         Ok(())
     }
 
-    /// Login with QR code. Runs WebSocket monitor in a background thread.
-    pub async fn login_qr(&self) -> Result<()> {
-        println!("Connecting to jAccount QR login...");
-        let login_info = login::get_params_uuid_cookies(&self.client, login::CANVAS_LOGIN_URL).await?;
-
-        let client = self.client.clone();
-        let uuid = login_info.uuid.clone();
-
-        // WebSocket monitor in background thread
-        let ws_uuid = uuid.clone();
-        let ws_handle = std::thread::spawn(move || -> Result<()> {
-            let client_clone = client.clone();
-            let ws_uuid_inner = ws_uuid.clone();
-
-            qr_login::monitor_qr_ws(&ws_uuid, "", move |ts, sig| {
-                // Fetch and display new QR code
-                let rt = tokio::runtime::Runtime::new().unwrap();
-                let qr_bytes = rt.block_on(async {
-                    qr_login::get_qr_code_bytes(&client_clone, &ws_uuid_inner, &ts, &sig).await
-                });
-                if let Ok(bytes) = qr_bytes {
-                    qr_login::display_qr(&bytes);
-                }
-                Ok(())
-            })
-        });
-
-        // Initial QR code
-        let qr_bytes = qr_login::get_qr_code_bytes(&self.client, &uuid, "0", "0").await?;
-        qr_login::display_qr(&qr_bytes);
-        println!("\nScan the QR code with your SJTU mobile app...");
-
-        // Wait for WebSocket thread to complete (returns on LOGIN event)
-        match ws_handle.join() {
-            Ok(Ok(())) => {
-                println!("QR code scanned! Completing login...");
-                let success = qr_login::express_login(&self.client, &uuid).await?;
-                if !success {
-                    return Err(anyhow::anyhow!("QR login completion failed"));
-                }
-
-                println!("Login successful!");
-
-                // Establish OC session
-                println!("Establishing OpenCourse session...");
-                login::login_using_cookies(&self.client, login::OC_LOGIN_URL).await?;
-
-                // Save cookies for future commands
-                println!("Session cookies saved.");
-            }
-            Ok(Err(e)) => {
-                return Err(anyhow::anyhow!("QR login WebSocket error: {}", e));
-            }
-            Err(_) => {
-                return Err(anyhow::anyhow!("QR login thread panicked"));
-            }
-        }
-
-        Ok(())
-    }
-
     /// Fetch all courses using the default VOD API.
     pub async fn refresh_courses_default(&mut self) -> Result<()> {
         println!("Fetching enrolled courses...");
@@ -227,7 +165,37 @@ impl App {
             return Err(anyhow::anyhow!("No courses selected"));
         }
 
-        let tasks = download::generate_download_tasks(&selected, only_recordings);
+        let mut tasks: Vec<DownloadTask> = Vec::new();
+        let mut global_index = 1;
+
+        for course in &selected {
+            let mut sorted_videos = course.videos.clone();
+            sorted_videos.sort_by_key(|v| v.view_num);
+
+            for video in &sorted_videos {
+                if only_recordings && !video.is_recording {
+                    continue;
+                }
+
+                let ext = if video.file_ext.is_empty() { "mp4" } else { &video.file_ext };
+                let filename = format!(
+                    "{}_{}_{}_{:03}.{}",
+                    download::sanitize_filename(&course.subject_name),
+                    download::sanitize_filename(&course.teacher),
+                    download::sanitize_filename(&course.name),
+                    global_index,
+                    ext,
+                );
+
+                tasks.push(DownloadTask {
+                    url: video.url.clone(),
+                    filename,
+                });
+
+                global_index += 1;
+            }
+        }
+
         if tasks.is_empty() {
             return Err(anyhow::anyhow!("No videos found in selected courses"));
         }
@@ -403,26 +371,6 @@ impl App {
             return Err(anyhow::anyhow!("No videos found for this course"));
         }
         self.download_lecture_range(1, total, only_recordings, output_dir).await
-    }
-
-    /// Export course data to JSON.
-    pub fn export_courses(&self, path: &PathBuf) -> Result<()> {
-        let content = serde_json::to_string_pretty(&self.courses)
-            .context("Failed to serialize courses")?;
-        std::fs::write(path, content)
-            .context("Failed to write export file")?;
-        println!("Exported {} courses to {}", self.courses.len(), path.display());
-        Ok(())
-    }
-
-    /// Import course data from JSON.
-    pub fn import_courses(&self, path: &PathBuf) -> Result<Vec<Course>> {
-        let content = std::fs::read_to_string(path)
-            .with_context(|| format!("Failed to read {}", path.display()))?;
-        let courses: Vec<Course> = serde_json::from_str(&content)
-            .with_context(|| format!("Failed to parse {}", path.display()))?;
-        println!("Imported {} courses from {}", courses.len(), path.display());
-        Ok(courses)
     }
 
     /// Set course ID.

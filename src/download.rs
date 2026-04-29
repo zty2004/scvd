@@ -8,7 +8,7 @@ use anyhow::{Context, Result};
 use indicatif::{ProgressBar, ProgressStyle};
 use console::style;
 
-use crate::types::{Course, DownloadTask, HistoryEntry};
+use crate::types::{DownloadTask, HistoryEntry};
 use crate::history;
 
 /// Find the aria2c binary (bundled or from PATH).
@@ -46,45 +46,6 @@ fn which_aria2c() -> Option<String> {
 /// Sanitize a filename for the filesystem.
 pub fn sanitize_filename(name: &str) -> String {
     name.replace(|c: char| matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'), "_")
-}
-
-/// Generate download tasks from selected courses.
-pub fn generate_download_tasks(
-    courses: &[Course],
-    only_recordings: bool,
-) -> Vec<DownloadTask> {
-    let mut tasks = Vec::new();
-    let mut global_index = 1;
-
-    for course in courses {
-        let mut sorted_videos = course.videos.clone();
-        sorted_videos.sort_by_key(|v| v.view_num);
-
-        for video in &sorted_videos {
-            if only_recordings && !video.is_recording {
-                continue;
-            }
-
-            let ext = if video.file_ext.is_empty() { "mp4" } else { &video.file_ext };
-            let filename = format!(
-                "{}_{}_{}_{:03}.{}",
-                sanitize_filename(&course.subject_name),
-                sanitize_filename(&course.teacher),
-                sanitize_filename(&course.name),
-                global_index,
-                ext,
-            );
-
-            tasks.push(DownloadTask {
-                url: video.url.clone(),
-                filename,
-            });
-
-            global_index += 1;
-        }
-    }
-
-    tasks
 }
 
 /// Generate preview of filenames that would be downloaded.
