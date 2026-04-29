@@ -42,7 +42,7 @@ pub fn create_client() -> Result<reqwest::Client> {
 }
 
 /// Create a client that does NOT follow redirects, for capturing Set-Cookie headers.
-pub fn create_no_redirect_client() -> Result<reqwest::Client> {
+pub fn _create_no_redirect_client() -> Result<reqwest::Client> {
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
         .timeout(std::time::Duration::from_secs(30))
@@ -102,7 +102,7 @@ fn save_cookies_to_file(cookies: &[CookieEntry]) -> Result<()> {
     Ok(())
 }
 
-pub fn clear_cookies() -> Result<()> {
+pub fn _clear_cookies() -> Result<()> {
     let path = config::config_dir().join("cookies.json");
     if path.exists() {
         std::fs::remove_file(&path)?;
