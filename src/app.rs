@@ -7,6 +7,7 @@ use crate::config;
 use crate::download;
 use crate::login;
 use crate::types::{Course, DownloadTask, VideoInfo};
+use crate::vdebug;
 
 fn print_captcha_in_terminal(img: &image::DynamicImage) -> Result<()> {
     // Add some vertical spacing so we don't overwrite recent terminal output.
@@ -42,6 +43,24 @@ impl App {
             course_id: saved_config.course_id.clone(),
             courses: Vec::new(),
         })
+    }
+
+    async fn prewarm_oc_cookies(&self) {
+        // Best-effort: try to let oc.sjtu.edu.cn set session/csrf cookies, then persist
+        // any Set-Cookie headers to cookies.json.
+        let url = "https://oc.sjtu.edu.cn/";
+        match self.client.get(url).send().await {
+            Ok(resp) => {
+                if let Err(e) = crate::client::capture_and_save_cookies(&resp, "oc.sjtu.edu.cn") {
+                    vdebug!("[DEBUG] prewarm oc cookies: failed to save cookies: {}", e);
+                } else {
+                    vdebug!("[DEBUG] prewarm oc cookies: done");
+                }
+            }
+            Err(e) => {
+                vdebug!("[DEBUG] prewarm oc cookies: request failed: {}", e);
+            }
+        }
     }
 
     fn load_saved_credentials() -> Result<(String, String)> {
@@ -176,6 +195,10 @@ Please run the login command first (and save username/password) so download can 
                 anyhow::anyhow!("No course ID set. Use --course-id or set it via config.")
             })?
             .clone();
+
+        // Best-effort cookie prewarm for oc.sjtu.edu.cn, to improve the chance of
+        // finding the OIDC/LTI forms in the following v2 flow.
+        self.prewarm_oc_cookies().await;
 
         println!("Fetching course {} via v2 API...", course_id);
 
