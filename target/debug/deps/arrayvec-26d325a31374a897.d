@@ -1,0 +1,11 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/arrayvec-26d325a31374a897.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/arrayvec_impl.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/arrayvec.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/array_string.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/char.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/errors.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/utils.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/libarrayvec-26d325a31374a897.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/arrayvec_impl.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/arrayvec.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/array_string.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/char.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/errors.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/utils.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/arrayvec_impl.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/arrayvec.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/array_string.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/char.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/errors.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/arrayvec-0.7.6/src/utils.rs:

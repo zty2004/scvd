@@ -1,0 +1,10 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/crc32fast-019a3072d56c19de.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/baseline.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/combine.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/specialized/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/table.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/specialized/aarch64.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/libcrc32fast-019a3072d56c19de.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/baseline.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/combine.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/specialized/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/table.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/specialized/aarch64.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/baseline.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/combine.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/specialized/mod.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/table.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/crc32fast-1.5.0/src/specialized/aarch64.rs:

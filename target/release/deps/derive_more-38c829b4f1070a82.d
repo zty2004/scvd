@@ -1,0 +1,10 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/derive_more-38c829b4f1070a82.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/syn_compat.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/utils.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_assign_like.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_helpers.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_like.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/libderive_more-38c829b4f1070a82.so: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/syn_compat.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/utils.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_assign_like.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_helpers.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_like.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/syn_compat.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/utils.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_assign_like.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_helpers.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/derive_more-0.99.20/src/add_like.rs:

@@ -1,0 +1,12 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/cookie-65810fb60df9a45a.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/builder.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/parse.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/jar.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/delta.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/same_site.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/expiration.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/prefix.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/libcookie-65810fb60df9a45a.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/builder.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/parse.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/jar.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/delta.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/same_site.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/expiration.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/prefix.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/builder.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/parse.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/jar.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/delta.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/same_site.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/expiration.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/cookie-0.18.1/src/prefix.rs:

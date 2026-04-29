@@ -1,0 +1,9 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/anstyle_parse-a875a58ff958c9cf.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/params.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/definitions.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/table.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/libanstyle_parse-a875a58ff958c9cf.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/params.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/definitions.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/table.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/params.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/mod.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/definitions.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/anstyle-parse-1.0.0/src/state/table.rs:

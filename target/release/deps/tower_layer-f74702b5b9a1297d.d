@@ -1,0 +1,11 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/tower_layer-f74702b5b9a1297d.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/identity.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/layer_fn.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/stack.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/tuple.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/libtower_layer-f74702b5b9a1297d.rlib: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/identity.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/layer_fn.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/stack.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/tuple.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/libtower_layer-f74702b5b9a1297d.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/identity.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/layer_fn.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/stack.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/tuple.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/identity.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/layer_fn.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/stack.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/tower-layer-0.3.3/src/tuple.rs:

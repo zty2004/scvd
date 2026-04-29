@@ -1,0 +1,9 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/linux_raw_sys-1366acaeb5e16a22.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/elf.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/errno.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/general.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/ioctl.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/liblinux_raw_sys-1366acaeb5e16a22.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/elf.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/errno.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/general.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/ioctl.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/elf.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/errno.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/general.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/linux-raw-sys-0.4.15/src/aarch64/ioctl.rs:

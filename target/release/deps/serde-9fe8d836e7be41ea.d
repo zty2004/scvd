@@ -1,0 +1,14 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/serde-9fe8d836e7be41ea.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/integer128.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/de.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/ser.rs /home/lurker/sjtu-canvas-video-download/rust/target/release/build/serde-44dfc0fcfc591fd9/out/private.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/libserde-9fe8d836e7be41ea.rlib: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/integer128.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/de.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/ser.rs /home/lurker/sjtu-canvas-video-download/rust/target/release/build/serde-44dfc0fcfc591fd9/out/private.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/libserde-9fe8d836e7be41ea.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/integer128.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/de.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/ser.rs /home/lurker/sjtu-canvas-video-download/rust/target/release/build/serde-44dfc0fcfc591fd9/out/private.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/integer128.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/mod.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/de.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/serde-1.0.228/src/private/ser.rs:
+/home/lurker/sjtu-canvas-video-download/rust/target/release/build/serde-44dfc0fcfc591fd9/out/private.rs:
+
+# env-dep:OUT_DIR=/home/lurker/sjtu-canvas-video-download/rust/target/release/build/serde-44dfc0fcfc591fd9/out

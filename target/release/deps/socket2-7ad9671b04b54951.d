@@ -1,0 +1,11 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/socket2-7ad9671b04b54951.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sockaddr.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/socket.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sockref.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sys/unix.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/libsocket2-7ad9671b04b54951.rlib: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sockaddr.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/socket.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sockref.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sys/unix.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/libsocket2-7ad9671b04b54951.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sockaddr.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/socket.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sockref.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sys/unix.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sockaddr.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/socket.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sockref.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/socket2-0.6.3/src/sys/unix.rs:

@@ -1,0 +1,10 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/futures_channel-4712652ff4b9d859.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/lock.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/queue.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/sink_impl.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/oneshot.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/debug/deps/libfutures_channel-4712652ff4b9d859.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/lock.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/mod.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/queue.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/sink_impl.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/oneshot.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/lock.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/mod.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/queue.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/mpsc/sink_impl.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/futures-channel-0.3.32/src/oneshot.rs:

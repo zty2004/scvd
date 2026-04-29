@@ -1,0 +1,11 @@
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/rand_core-c1d56a21569b8223.d: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/block.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/impls.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/le.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/os.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/librand_core-c1d56a21569b8223.rlib: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/block.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/impls.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/le.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/os.rs
+
+/home/lurker/sjtu-canvas-video-download/rust/target/release/deps/librand_core-c1d56a21569b8223.rmeta: /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/lib.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/block.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/impls.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/le.rs /home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/os.rs
+
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/lib.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/block.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/impls.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/le.rs:
+/home/lurker/.cargo/registry/src/mirrors.ustc.edu.cn-38d0e5eb5da2abae/rand_core-0.9.5/src/os.rs:
