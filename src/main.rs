@@ -60,17 +60,9 @@ enum Commands {
         #[arg(long)]
         course_id: String,
 
-        /// Download a specific lecture by index (1-based)
-        #[arg(long, conflicts_with_all = ["lecture_range", "lecture_all"])]
-        lecture: Option<usize>,
-
-        /// Download a range of lectures: start-end (1-based)
-        #[arg(long, conflicts_with_all = ["lecture", "lecture_all"])]
-        lecture_range: Option<String>,
-
-        /// Download all lectures
-        #[arg(long, conflicts_with_all = ["lecture", "lecture_range"])]
-        lecture_all: bool,
+        /// Lecture selector: 0 (all), N (1-based), or A-B (1-based)
+        #[arg(long)]
+        lecture: Option<String>,
 
         /// Only download main recordings (skip screencasts)
         #[arg(long)]
@@ -123,8 +115,8 @@ async fn main() -> Result<()> {
         Commands::Login { login } => cmd_login(login).await?,
         Commands::QrLogin => cmd_qr_login().await?,
         Commands::List { course_id, login } => cmd_list(course_id, login).await?,
-        Commands::Download { course_id, lecture, lecture_range, lecture_all, only_recordings, output_dir, login } => {
-            cmd_download(course_id, lecture, lecture_range, lecture_all, only_recordings, output_dir, login).await?;
+        Commands::Download { course_id, lecture, only_recordings, output_dir, login } => {
+            cmd_download(course_id, lecture, only_recordings, output_dir, login).await?;
         }
         Commands::History { re_download, clear } => cmd_history(re_download, clear).await?,
         Commands::Export { path, course_id, login } => cmd_export(path, course_id, login).await?,
@@ -190,9 +182,7 @@ async fn cmd_list(course_id: Option<String>, login: LoginOpts) -> Result<()> {
 
 async fn cmd_download(
     course_id: String,
-    lecture: Option<usize>,
-    lecture_range: Option<String>,
-    lecture_all: bool,
+    lecture: Option<String>,
     only_recordings: bool,
     output_dir: String,
     login: LoginOpts,
@@ -206,45 +196,71 @@ async fn cmd_download(
 
     let output_path = PathBuf::from(&output_dir);
 
-    if lecture_all {
-        app.download_all_lectures(only_recordings, &output_path).await?;
-        return Ok(());
+    match parse_lecture_spec(lecture.as_deref())? {
+        LectureSpec::All => {
+            app.download_all_lectures(only_recordings, &output_path).await?;
+        }
+        LectureSpec::One(n) => {
+            app.download_lecture_range(n, n, only_recordings, &output_path).await?;
+        }
+        LectureSpec::Range(start, end) => {
+            app.download_lecture_range(start, end, only_recordings, &output_path).await?;
+        }
     }
-
-    if let Some(range_str) = lecture_range {
-        let (start, end) = parse_lecture_range(&range_str)?;
-        app.download_lecture_range(start, end, only_recordings, &output_path).await?;
-        return Ok(());
-    }
-
-    let lecture_num = lecture.unwrap_or(1);
-    if lecture_num == 0 {
-        return Err(anyhow::anyhow!("Lecture number must be >= 1"));
-    }
-    app.download_lecture_range(lecture_num, lecture_num, only_recordings, &output_path).await?;
 
     Ok(())
 }
 
-fn parse_lecture_range(s: &str) -> Result<(usize, usize)> {
+enum LectureSpec {
+    All,
+    One(usize),
+    Range(usize, usize),
+}
+
+fn parse_lecture_spec(s: Option<&str>) -> Result<LectureSpec> {
+    let Some(s) = s else {
+        return Ok(LectureSpec::One(1));
+    };
+
+    let s = s.trim();
+    if s.is_empty() {
+        return Ok(LectureSpec::One(1));
+    }
+
+    if s == "0" {
+        return Ok(LectureSpec::All);
+    }
+
+    if let Ok(n) = s.parse::<usize>() {
+        if n == 0 {
+            return Err(anyhow::anyhow!("Lecture number must be >= 1 (use 0 for all)"));
+        }
+        return Ok(LectureSpec::One(n));
+    }
+
     let parts: Vec<&str> = s.split('-').collect();
     if parts.len() != 2 {
         return Err(anyhow::anyhow!(
-            "Invalid range format: {}. Use start-end (e.g. 1-5)",
+            "Invalid lecture selector: {}. Use 0 (all), N, or A-B (e.g. 1-5)",
             s
         ));
     }
-    let start: usize = parts[0].parse()?;
-    let end: usize = parts[1].parse()?;
+
+    let start: usize = parts[0].trim().parse()?;
+    let end: usize = parts[1].trim().parse()?;
 
     if start == 0 || end == 0 {
         return Err(anyhow::anyhow!("Lecture range endpoints must be >= 1"));
     }
     if start > end {
-        return Err(anyhow::anyhow!("Invalid lecture range: start ({}) > end ({})", start, end));
+        return Err(anyhow::anyhow!(
+            "Invalid lecture range: start ({}) > end ({})",
+            start,
+            end
+        ));
     }
 
-    Ok((start, end))
+    Ok(LectureSpec::Range(start, end))
 }
 
 async fn cmd_history(re_download: Option<usize>, clear: bool) -> Result<()> {
