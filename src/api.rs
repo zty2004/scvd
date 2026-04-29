@@ -11,6 +11,18 @@ use url::Url;
 
 use crate::types::{Course, VideoInfo};
 
+fn is_verbose() -> bool {
+    std::env::args().any(|a| a == "--verbose" || a == "-v")
+}
+
+macro_rules! debug_stdout {
+    ($($arg:tt)*) => {{
+        if is_verbose() {
+            println!($($arg)*);
+        }
+    }};
+}
+
 // ============================================================
 // Helper: JSON value navigation
 // ============================================================
@@ -487,16 +499,16 @@ pub async fn get_external_tool_id(client: &reqwest::Client, course_id: &str) -> 
     let default = "8329".to_string();
     let url = format!("https://oc.sjtu.edu.cn/courses/{}", course_id);
 
-    eprintln!("[DEBUG] get_external_tool_id: GET {}", url);
+    debug_stdout!("[DEBUG] get_external_tool_id: GET {}", url);
     let resp = match client.get(&url).send().await {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("[DEBUG] Failed to fetch course page: {}", e);
+            debug_stdout!("[DEBUG] Failed to fetch course page: {}", e);
             return default;
         }
     };
 
-    eprintln!("[DEBUG] get_external_tool_id: final URL = {}", resp.url());
+    debug_stdout!("[DEBUG] get_external_tool_id: final URL = {}", resp.url());
 
     let body = match resp.text().await {
         Ok(b) => b,

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0] - 2026-04-29
+
+### Added
+- Add verbose mode (`-v`/`--verbose`) to print debug logs to stdout.
+
+### Changed
+- Silence debug logs by default while keeping minimal progress output for login/download.
+
 ## [0.0.3] - 2026-04-29
 
 ### Removed
