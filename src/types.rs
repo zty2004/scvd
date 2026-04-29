@@ -56,6 +56,6 @@ pub struct SavedConfig {
 
 /// Exported course data (import/export)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CourseExport {
+pub struct _CourseExport {
     pub courses: Vec<Course>,
 }
