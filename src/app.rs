@@ -332,10 +332,10 @@ impl App {
         }
 
         let start_idx = start - 1; // 1-based
-        let end_idx_excl = end; // exclusive
+        let end_idx_excl = end; // 1-based, inclusive -> exclusive
 
         let mut tasks: Vec<DownloadTask> = Vec::new();
-        let mut global_idx = 1;
+        let mut global_idx = start; // keep numbering aligned with lecture index
 
         for (local_idx, video) in all_videos.iter().enumerate() {
             if local_idx < start_idx || local_idx >= end_idx_excl {
