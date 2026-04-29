@@ -4,8 +4,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use serde::Deserialize;
 
-mod app;
 mod api;
+mod app;
 mod client;
 mod config;
 mod download;
@@ -40,7 +40,10 @@ struct LoginOpts {
 }
 
 #[derive(Parser)]
-#[command(name = "sjtu-canvas-video-download", about = "SJTU Canvas Video Downloader (Rust CLI)")]
+#[command(
+    name = "sjtu-canvas-video-download",
+    about = "SJTU Canvas Video Downloader (Rust CLI)"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -50,15 +53,6 @@ struct Cli {
 enum Commands {
     /// Interactive jAccount login (username/password)
     Login {
-        #[command(flatten)]
-        login: LoginOpts,
-    },
-    /// List all enrolled courses and videos
-    List {
-        /// Use a specific Canvas course ID (v2 API)
-        #[arg(long)]
-        course_id: Option<String>,
-
         #[command(flatten)]
         login: LoginOpts,
     },
@@ -96,22 +90,17 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Login { login } => cmd_login(login).await?,
-        Commands::List { course_id, login } => cmd_list(course_id, login).await?,
-        Commands::Download { course_id, lecture, only_recordings, output_dir } => {
+        Commands::Download {
+            course_id,
+            lecture,
+            only_recordings,
+            output_dir,
+        } => {
             cmd_download(course_id, lecture, only_recordings, output_dir).await?;
         }
         Commands::History { re_download, clear } => cmd_history(re_download, clear).await?,
     }
 
-    Ok(())
-}
-
-/// Try to login if credentials are provided, otherwise rely on saved cookies.
-async fn maybe_login(app: &app::App, login: &LoginOpts) -> Result<()> {
-    let (username, password) = get_login_credentials(login)?;
-    if let (Some(username), Some(password)) = (username, password) {
-        app.login_pwd(&username, &password, None).await?;
-    }
     Ok(())
 }
 
@@ -138,21 +127,6 @@ async fn cmd_login(login: LoginOpts) -> Result<()> {
     Ok(())
 }
 
-async fn cmd_list(course_id: Option<String>, login: LoginOpts) -> Result<()> {
-    let mut app = app::App::new().await?;
-    maybe_login(&app, &login).await?;
-
-    if let Some(id) = course_id {
-        app.set_course_id(id);
-        app.refresh_courses_v2().await?;
-    } else {
-        app.refresh_courses_default().await?;
-    }
-
-    app.print_courses();
-    Ok(())
-}
-
 async fn cmd_download(
     course_id: String,
     lecture: Option<String>,
@@ -169,13 +143,16 @@ async fn cmd_download(
 
     match parse_lecture_spec(lecture.as_deref())? {
         LectureSpec::All => {
-            app.download_all_lectures(only_recordings, &output_path).await?;
+            app.download_all_lectures(only_recordings, &output_path)
+                .await?;
         }
         LectureSpec::One(n) => {
-            app.download_lecture_range(n, n, only_recordings, &output_path).await?;
+            app.download_lecture_range(n, n, only_recordings, &output_path)
+                .await?;
         }
         LectureSpec::Range(start, end) => {
-            app.download_lecture_range(start, end, only_recordings, &output_path).await?;
+            app.download_lecture_range(start, end, only_recordings, &output_path)
+                .await?;
         }
     }
 
@@ -229,7 +206,9 @@ fn parse_lecture_spec(s: Option<&str>) -> Result<LectureSpec> {
 
     if let Ok(n) = s.parse::<usize>() {
         if n == 0 {
-            return Err(anyhow::anyhow!("Lecture number must be >= 1 (use 0 for all)"));
+            return Err(anyhow::anyhow!(
+                "Lecture number must be >= 1 (use 0 for all)"
+            ));
         }
         return Ok(LectureSpec::One(n));
     }
@@ -284,10 +263,15 @@ async fn cmd_history(re_download: Option<usize>, clear: bool) -> Result<()> {
     for (i, entry) in entries.iter().enumerate() {
         let ts = chrono::DateTime::from_timestamp_nanos(entry.time);
         let first_file = entry.filenames.first().map(|s| s.as_str()).unwrap_or("N/A");
-        println!("  [{}] {} - {} ({} files)", i, ts.format("%Y-%m-%d %H:%M:%S"), first_file, entry.filenames.len());
+        println!(
+            "  [{}] {} - {} ({} files)",
+            i,
+            ts.format("%Y-%m-%d %H:%M:%S"),
+            first_file,
+            entry.filenames.len()
+        );
     }
 
     println!("\nUse --re-download <index> to re-download, or --clear to clear history.");
     Ok(())
 }
-

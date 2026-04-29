@@ -20,8 +20,14 @@ fn parse_params(url: &str) -> HashMap<String, String> {
         let query = &url[q_start + 1..];
         for pair in query.split('&') {
             if let Some((k, v)) = pair.split_once('=') {
-                let k = urlencoding::decode(k).ok().map(|s| s.into_owned()).unwrap_or(k.to_string());
-                let v = urlencoding::decode(v).ok().map(|s| s.into_owned()).unwrap_or(v.to_string());
+                let k = urlencoding::decode(k)
+                    .ok()
+                    .map(|s| s.into_owned())
+                    .unwrap_or(k.to_string());
+                let v = urlencoding::decode(v)
+                    .ok()
+                    .map(|s| s.into_owned())
+                    .unwrap_or(v.to_string());
                 params.insert(k, v);
             }
         }
@@ -79,7 +85,10 @@ pub async fn get_captcha_bytes(
 ) -> Result<Vec<u8>> {
     let resp = client
         .get("https://jaccount.sjtu.edu.cn/jaccount/captcha")
-        .query(&[("uuid", uuid), ("t", &format!("{}", chrono::Utc::now().timestamp_millis()))])
+        .query(&[
+            ("uuid", uuid),
+            ("t", &format!("{}", chrono::Utc::now().timestamp_millis())),
+        ])
         .header("Referer", referer_url)
         .send()
         .await
@@ -88,7 +97,8 @@ pub async fn get_captcha_bytes(
     // Capture cookies from captcha response
     client::capture_and_save_cookies(&resp, "jaccount.sjtu.edu.cn").ok();
 
-    resp.bytes().await
+    resp.bytes()
+        .await
         .context("Failed to read captcha")
         .map(|b| b.to_vec())
 }
@@ -126,7 +136,10 @@ pub async fn login(
     client::capture_and_save_cookies(&resp, "jaccount.sjtu.edu.cn").ok();
 
     // Login failed if redirected to jalogin page
-    let failed = resp.url().to_string().starts_with("https://jaccount.sjtu.edu.cn/jaccount/jalogin");
+    let failed = resp
+        .url()
+        .to_string()
+        .starts_with("https://jaccount.sjtu.edu.cn/jaccount/jalogin");
 
     Ok(!failed)
 }
