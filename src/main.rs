@@ -56,18 +56,22 @@ enum Commands {
     },
     /// Download videos
     Download {
-        /// Download all enrolled courses
-        #[arg(long)]
-        all: bool,
         /// Use a specific Canvas course ID (v2 API)
         #[arg(long)]
-        course_id: Option<String>,
-        /// Select a course by index (1-based, use `list` to see indices)
-        #[arg(long)]
-        course: Option<usize>,
-        /// Download a range of videos from a course: start-end
-        #[arg(long)]
-        range: Option<String>,
+        course_id: String,
+
+        /// Download a specific lecture by index (1-based)
+        #[arg(long, conflicts_with_all = ["lecture_range", "lecture_all"])]
+        lecture: Option<usize>,
+
+        /// Download a range of lectures: start-end (1-based)
+        #[arg(long, conflicts_with_all = ["lecture", "lecture_all"])]
+        lecture_range: Option<String>,
+
+        /// Download all lectures
+        #[arg(long, conflicts_with_all = ["lecture", "lecture_range"])]
+        lecture_all: bool,
+
         /// Only download main recordings (skip screencasts)
         #[arg(long)]
         only_recordings: bool,
@@ -119,8 +123,8 @@ async fn main() -> Result<()> {
         Commands::Login { login } => cmd_login(login).await?,
         Commands::QrLogin => cmd_qr_login().await?,
         Commands::List { course_id, login } => cmd_list(course_id, login).await?,
-        Commands::Download { all, course_id, course, range, only_recordings, output_dir, login } => {
-            cmd_download(all, course_id, course, range, only_recordings, output_dir, login).await?;
+        Commands::Download { course_id, lecture, lecture_range, lecture_all, only_recordings, output_dir, login } => {
+            cmd_download(course_id, lecture, lecture_range, lecture_all, only_recordings, output_dir, login).await?;
         }
         Commands::History { re_download, clear } => cmd_history(re_download, clear).await?,
         Commands::Export { path, course_id, login } => cmd_export(path, course_id, login).await?,
@@ -185,10 +189,10 @@ async fn cmd_list(course_id: Option<String>, login: LoginOpts) -> Result<()> {
 }
 
 async fn cmd_download(
-    all: bool,
-    course_id: Option<String>,
-    course: Option<usize>,
-    range: Option<String>,
+    course_id: String,
+    lecture: Option<usize>,
+    lecture_range: Option<String>,
+    lecture_all: bool,
     only_recordings: bool,
     output_dir: String,
     login: LoginOpts,
@@ -196,47 +200,50 @@ async fn cmd_download(
     let mut app = app::App::new().await?;
     maybe_login(&app, &login).await?;
 
-    // Fetch courses
-    if let Some(id) = &course_id {
-        app.set_course_id(id.clone());
-        app.refresh_courses_v2().await?;
-    } else {
-        app.refresh_courses_default().await?;
-    }
+    // Fetch course by required course-id
+    app.set_course_id(course_id);
+    app.refresh_courses_v2().await?;
 
     let output_path = PathBuf::from(&output_dir);
 
-    // Download range of videos from a course
-    if let Some(range_str) = range {
-        let (start, end) = parse_range(&range_str)?;
-        let course_index = course.ok_or_else(|| anyhow::anyhow!("--course is required with --range"))?;
-        app.download_range(course_index - 1, start, end, only_recordings, &output_path).await?;
+    if lecture_all {
+        app.download_all_lectures(only_recordings, &output_path).await?;
         return Ok(());
     }
 
-    // Download all or specific course
-    if all {
-        let indices: Vec<usize> = (0..app.courses.len()).collect();
-        if indices.is_empty() {
-            return Err(anyhow::anyhow!("No courses to download"));
-        }
-        app.download(&indices, only_recordings, &output_path).await?;
-    } else if let Some(idx) = course {
-        app.download(&[idx - 1], only_recordings, &output_path).await?;
-    } else {
-        return Err(anyhow::anyhow!("Use --all, --course, or --range to specify what to download"));
+    if let Some(range_str) = lecture_range {
+        let (start, end) = parse_lecture_range(&range_str)?;
+        app.download_lecture_range(start, end, only_recordings, &output_path).await?;
+        return Ok(());
     }
+
+    let lecture_num = lecture.unwrap_or(1);
+    if lecture_num == 0 {
+        return Err(anyhow::anyhow!("Lecture number must be >= 1"));
+    }
+    app.download_lecture_range(lecture_num, lecture_num, only_recordings, &output_path).await?;
 
     Ok(())
 }
 
-fn parse_range(s: &str) -> Result<(usize, usize)> {
+fn parse_lecture_range(s: &str) -> Result<(usize, usize)> {
     let parts: Vec<&str> = s.split('-').collect();
     if parts.len() != 2 {
-        return Err(anyhow::anyhow!("Invalid range format: {}. Use start-end (e.g. 1-5)", s));
+        return Err(anyhow::anyhow!(
+            "Invalid range format: {}. Use start-end (e.g. 1-5)",
+            s
+        ));
     }
     let start: usize = parts[0].parse()?;
     let end: usize = parts[1].parse()?;
+
+    if start == 0 || end == 0 {
+        return Err(anyhow::anyhow!("Lecture range endpoints must be >= 1"));
+    }
+    if start > end {
+        return Err(anyhow::anyhow!("Invalid lecture range: start ({}) > end ({})", start, end));
+    }
+
     Ok((start, end))
 }
 
