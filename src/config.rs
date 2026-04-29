@@ -17,7 +17,7 @@ pub fn history_path() -> PathBuf {
     config_dir().join("history.json")
 }
 
-fn cookies_path() -> PathBuf {
+fn _cookies_path() -> PathBuf {
     config_dir().join("cookies.json")
 }
 
@@ -38,7 +38,7 @@ pub fn load_config() -> Result<SavedConfig> {
     Ok(config)
 }
 
-pub fn save_config(config: &SavedConfig) -> Result<()> {
+pub fn _save_config(config: &SavedConfig) -> Result<()> {
     ensure_config_dir()?;
     let content = serde_json::to_string_pretty(config)
         .context("Failed to serialize config")?;
@@ -47,8 +47,8 @@ pub fn save_config(config: &SavedConfig) -> Result<()> {
     Ok(())
 }
 
-pub fn load_cookie_strings() -> Result<Vec<String>> {
-    let path = cookies_path();
+pub fn _load_cookie_strings() -> Result<Vec<String>> {
+    let path = _cookies_path();
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -59,15 +59,15 @@ pub fn load_cookie_strings() -> Result<Vec<String>> {
     Ok(cookies)
 }
 
-pub fn save_cookie_strings(cookie_strs: &[String]) -> Result<()> {
+pub fn _save_cookie_strings(cookie_strs: &[String]) -> Result<()> {
     ensure_config_dir()?;
     let content = serde_json::to_string_pretty(cookie_strs)
         .context("Failed to serialize cookies")?;
-    std::fs::write(cookies_path(), content)
+    std::fs::write(_cookies_path(), content)
         .context("Failed to write cookies")?;
     Ok(())
 }
 
-pub fn clear_cookies() -> Result<()> {
-    save_cookie_strings(&[])
+pub fn _clear_cookies() -> Result<()> {
+    _save_cookie_strings(&[])
 }
