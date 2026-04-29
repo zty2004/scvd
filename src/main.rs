@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use serde::Deserialize;
 
 mod app;
 mod api;
@@ -13,20 +14,30 @@ mod login;
 mod qr_login;
 mod types;
 
+#[derive(Debug, Clone, Deserialize)]
+struct LoginFile {
+    username: String,
+    password: String,
+}
+
 /// Login credentials that can be passed to any command requiring authentication.
 #[derive(Parser, Clone)]
 struct LoginOpts {
+    /// Read credentials from a TOML file (default: ./login.toml).
+    ///
+    /// The file should contain:
+    /// username = "..."
+    /// password = "..."
+    #[arg(long, short = 'f', default_value = "login.toml")]
+    file: String,
+
     /// jAccount username
-    #[arg(long)]
+    #[arg(long, short = 'u')]
     username: Option<String>,
 
     /// jAccount password
-    #[arg(long)]
+    #[arg(long, short = 'p')]
     password: Option<String>,
-
-    /// Captcha text (image will be saved to /tmp/sjtu_captcha.png)
-    #[arg(long)]
-    captcha: Option<String>,
 }
 
 #[derive(Parser)]
@@ -127,10 +138,9 @@ async fn main() -> Result<()> {
 
 /// Try to login if credentials are provided, otherwise rely on saved cookies.
 async fn maybe_login(app: &app::App, login: &LoginOpts) -> Result<()> {
-    if login.username.is_some() || login.password.is_some() {
-        let username = login.username.clone().unwrap_or_default();
-        let password = login.password.clone().unwrap_or_default();
-        app.login_pwd(&username, &password, login.captcha.clone()).await?;
+    let (username, password) = get_login_credentials(login)?;
+    if let (Some(username), Some(password)) = (username, password) {
+        app.login_pwd(&username, &password, None).await?;
     }
     Ok(())
 }
@@ -138,21 +148,23 @@ async fn maybe_login(app: &app::App, login: &LoginOpts) -> Result<()> {
 async fn cmd_login(login: LoginOpts) -> Result<()> {
     let app = app::App::new().await?;
 
-    let username = login.username.unwrap_or_else(|| {
+    let (username, password) = get_login_credentials(&login)?;
+
+    let username = username.unwrap_or_else(|| {
         dialoguer::Input::new()
             .with_prompt("Username")
             .interact_text()
             .unwrap_or_default()
     });
 
-    let password = login.password.unwrap_or_else(|| {
+    let password = password.unwrap_or_else(|| {
         dialoguer::Password::new()
             .with_prompt("Password")
             .interact()
             .unwrap_or_default()
     });
 
-    app.login_pwd(&username, &password, login.captcha).await?;
+    app.login_pwd(&username, &password, None).await?;
     Ok(())
 }
 
@@ -210,6 +222,31 @@ enum LectureSpec {
     All,
     One(usize),
     Range(usize, usize),
+}
+
+fn load_login_file(path: &str) -> Result<LoginFile> {
+    let content = std::fs::read_to_string(path)
+        .with_context(|| format!("Failed to read login file: {}", path))?;
+    toml::from_str(&content)
+        .with_context(|| format!("Failed to parse login file as TOML: {}", path))
+}
+
+fn get_login_credentials(login: &LoginOpts) -> Result<(Option<String>, Option<String>)> {
+    let has_user = login.username.is_some();
+    let has_pass = login.password.is_some();
+
+    if has_user || has_pass {
+        if !(has_user && has_pass) {
+            return Err(anyhow::anyhow!(
+                "--username/-u and --password/-p must be provided together"
+            ));
+        }
+        return Ok((login.username.clone(), login.password.clone()));
+    }
+
+    // Fallback to file
+    let lf = load_login_file(&login.file)?;
+    Ok((Some(lf.username), Some(lf.password)))
 }
 
 fn parse_lecture_spec(s: Option<&str>) -> Result<LectureSpec> {
