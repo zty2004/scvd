@@ -94,16 +94,15 @@ impl App {
         ).await?;
 
         if !success {
-            return Err(anyhow::anyhow!("Login failed. Wrong captcha or credentials?"));
+            return Err(anyhow::anyhow!(
+                "Login failed. Wrong captcha or credentials (or captcha expired)."
+            ));
         }
 
         println!("Login successful!");
 
-        // Establish OC session
-        println!("Establishing OpenCourse session...");
-        login::login_using_cookies(&self.client, login::OC_LOGIN_URL).await?;
-
-        // Save cookies for future commands
+        // NOTE: Stop here. Do NOT perform any follow-up OpenCourse/Canvas queries.
+        // The login command should only validate credentials + captcha and then exit.
         println!("Session cookies saved.");
 
         Ok(())

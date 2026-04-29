@@ -11,6 +11,12 @@
 .cargo/config.toml
 
 # ----------------------------
+# Secrets / Local credentials
+# ----------------------------
+# Default login credential file
+login.toml
+
+# ----------------------------
 # IDE / Editor
 # ----------------------------
 # VS Code
